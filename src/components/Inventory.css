@@ -1,0 +1,192 @@
+/* Inventory Page Styles */
+.inventory-container {
+  width: 80%;
+  margin: auto;
+  font-family: Arial, sans-serif;
+}
+
+/* Center-aligned page title */
+.page-title {
+  text-align: center;
+  font-size: 2rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+h2, h3 {
+  color: #444;
+}
+
+.form-container {
+  background-color: #f9f9f9;
+  padding: 20px;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 15px;
+}
+
+input {
+  width: 100%;
+  padding: 8px;
+  margin: 5px 0;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+button {
+  padding: 10px 15px;
+  border: none;
+  border-radius: 5px;
+  background-color: #4CAF50;
+  color: white;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #45a049;
+}
+
+.medicine-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  justify-content: space-between;
+}
+
+.medicine-card {
+  background-color: #f1f1f1;
+  padding: 15px;
+  width: 30%;
+  border-radius: 5px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.medicine-card p {
+  margin: 5px 0;
+}
+
+.message {
+  background-color: #dff0d8;
+  color: #3c763d;
+  padding: 10px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.btn-edit {
+  background-color: #ffa500;
+}
+
+.btn-delete {
+  background-color: #f44336;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+.btn-toggle-form {
+  background-color: #2196F3;
+  color: white;
+  padding: 10px 15px;
+  margin-bottom: 20px;
+  cursor: pointer;
+}
+
+/* Medicine Table Styles */
+.medicine-table-container {
+  max-height: 500px; /* Adjust height as needed */
+  overflow-y: auto;
+  border: 1px solid #ccc; /* Optional: For better visual separation */
+}
+
+.medicine-table {
+  
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+.medicine-table th, .medicine-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.medicine-table th {
+  background-color: #f2f2f2;
+  font-weight: bold;
+}
+
+.medicine-table thead th {
+  position: sticky;
+  top: 0;
+  background-color: #f9f9f9; /* Optional: Background color for the sticky header */
+  z-index: 1;
+  border-bottom: 2px solid #ccc;
+}
+
+/* .medicine-table tr:nth-child(even) {
+  background-color: #f9f9f9;
+} */
+
+.medicine-table tr:hover {
+  background-color: #d6ffcc;
+  color: #000000;
+}
+
+.medicine-table button {
+  margin-right: 5px;
+}
+/* Highlight H1 drugs */
+
+.highlight-h1 {
+  background-color: rgb(255, 250, 98); /* Light red background for visibility */
+  border-left: 5px solid tomato; /* Add a colored border for emphasis */
+}
+
+/* Label for H1 drugs */
+.h1-label {
+  color: rgb(43, 0, 255) !important;
+  font-weight: bold;
+}
+.h1-drug-label {
+  display: flex;
+  align-items: center;
+  gap: 6px; /* Reduce the gap further */
+}
+
+.h1-drug-checkbox {
+  margin: 0;
+  padding: 0;
+  width: 16px; /* Set a fixed width for uniformity */
+  height: 16px; /* Set a fixed height for uniformity */
+  vertical-align: middle; /* Ensure alignment with the text */
+  appearance: none; /* Remove browser-specific styles */
+  border: 1px solid #ccc; /* Add a border for a clean look */
+  border-radius: 2px; /* Optional: Add rounded corners */
+  background-color: #fff; /* Set a background color */
+  cursor: pointer; /* Add a pointer cursor */
+}
+
+.h1-drug-checkbox:checked {
+  background-color: #4caf50; /* Set a green background when checked */
+  border-color: #4caf50; /* Change the border color when checked */
+}
+
+
+/* Expired medicine */
+.expired {
+  background-color: #ff0202; /* Light red background */
+  color: #ffffff; /* Dark red text */
+}
+
+/* Near expiry medicine */
+/* .near-expiry {
+  background-color: #7d0000; /* Light yellow background */
+  /* color: #ffffff; /* Dark yellow text */
+/* }
+ */ 

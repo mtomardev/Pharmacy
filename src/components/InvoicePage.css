@@ -1,0 +1,164 @@
+.invoice-page-container {
+  width: 80%;
+  margin: auto;
+  font-family: Arial, sans-serif;
+}
+
+h1, h2 {
+  color: #333;
+  text-align: center;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 10px;
+  margin-bottom: 20px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.medicine-results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.medicine-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.medicine-item button {
+  padding: 5px 10px;
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.medicine-item button:hover {
+  background-color: #45a049;
+}
+
+.invoice-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.invoice-table th, .invoice-table td {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: center;
+}
+
+.invoice-table th {
+  background-color: #f2f2f2;
+}
+
+.invoice-table th:nth-child(1),
+.invoice-table td:nth-child(1),
+.invoice-table th:nth-child(2),
+.invoice-table td:nth-child(2) {
+  width: 60px; /* Adjust width for S.No and Qty columns */
+}
+
+.invoice-table th:nth-child(3),
+.invoice-table td:nth-child(3) {
+  width: 250px; /* Adjust width for Name column */
+}
+
+.invoice-table th:nth-child(4),
+.invoice-table td:nth-child(4),
+.invoice-table th:nth-child(5),
+.invoice-table td:nth-child(5) {
+  width: 100px; /* Adjust width for MRP and Selling Price columns */
+}
+
+.invoice-table th:nth-child(6),
+.invoice-table td:nth-child(6) {
+  width: 100px; /* Adjust width for Actions column */
+}
+
+.invoice-table input[type="number"] {
+  width: 40px; /* Reduce the width of the Quantity input box */
+  text-align: center; /* Center the number inside the input box */
+}
+
+.total-price {
+  text-align: right;
+  font-size: 1.2rem;
+  margin-top: 10px;
+  color: #333;
+}
+
+.medicine-item.highlighted {
+  background-color: #f0f0f0;
+  cursor: pointer;
+}
+
+/* New Layout for Invoice */
+.invoice-layout {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 30px;
+}
+
+.left-side {
+  width: 45%;
+  padding: 10px;
+}
+
+.right-side {
+  width: 45%;
+  padding: 10px;
+  text-align: right;
+}
+
+.left-side p,
+.right-side p {
+  margin: 5px 0;
+  font-size: 1rem;
+  color: #333;
+}
+
+.left-side {
+  border-right: 2px solid #ddd;
+}
+
+.error-message {
+  color: red;
+  margin-bottom: 10px;
+}
+
+.logged-in-user {
+  text-align: center;
+  font-size: 1rem;
+  color: #333;
+  margin-top: 20px;
+}
+
+.printbutton{
+  margin-left: 5px;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #invoice-print, #invoice-print * {
+    visibility: visible;
+  }
+  #invoice-print {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+}
