@@ -85,8 +85,8 @@ const SalesReport = () => {
       });
     });
     
-    setTotalSales(totalSalesAmount);
-    setTotalProfit(totalProfitAmount);
+    setTotalSales(parseFloat(totalSalesAmount.toFixed(2)));
+    setTotalProfit(parseFloat(totalProfitAmount).toFixed(2) );
   };
 
   return (
