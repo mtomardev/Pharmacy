@@ -374,6 +374,7 @@ const InvoicePage = () => {
         {lastInvoice && <p>Bill No: {lastInvoice.invoiceId}</p>}
           <p>Date: {new Date().toLocaleDateString()}</p>
           <p>Name: {customerName}</p>
+          <p>Number: {customerPhone}</p>
         </div>
       </div>
 

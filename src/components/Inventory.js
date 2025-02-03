@@ -127,7 +127,6 @@ const Inventory = () => {
         scheme: tempData.scheme,
         mrp: parseFloat(tempData.mrp),
         costPrice: parseFloat(tempData.costPrice),
-        price: parseFloat(tempData.price),
         sellingPrice: parseFloat(tempData.sellingPrice),
         discount: parseFloat(discount),
         distributor: tempData.distributor,
@@ -165,7 +164,6 @@ const Inventory = () => {
         scheme: tempData.scheme,
         mrp: parseFloat(tempData.mrp),
         costPrice: parseFloat(tempData.costPrice),
-        price: parseFloat(tempData.price),
         sellingPrice: parseFloat(tempData.sellingPrice),
         discount: parseFloat(discount),
         distributor: tempData.distributor,
@@ -317,15 +315,7 @@ const Inventory = () => {
                 required
               />
             </div>
-            <div className="form-group">
-              <label>Price:</label>
-              <input
-                type="number"
-                value={tempData.price || ""}
-                onChange={(e) => setTempData({ ...tempData, price: e.target.value })}
-                required
-              />
-            </div>
+            
             <div className="form-group">
               <label>Selling Price:</label>
               <input
@@ -392,7 +382,6 @@ const Inventory = () => {
               <th>Scheme</th>
               <th>MRP</th>
               <th>Cost Price</th>
-              <th>Price</th>
               <th>Discount (%)</th>
               <th>Selling Price</th>
               <th>Distributor</th>
@@ -508,19 +497,7 @@ const Inventory = () => {
                     medicine.costPrice
                   )}
                 </td>
-                <td>
-                  {editMedicine === medicine.id ? (
-                    <input
-                      type="number"
-                      value={tempData.price || ""}
-                      onChange={(e) =>
-                        setTempData({ ...tempData, price: e.target.value })
-                      }
-                    />
-                  ) : (
-                    medicine.price
-                  )}
-                </td>
+                
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
