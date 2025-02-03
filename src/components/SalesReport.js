@@ -56,7 +56,7 @@ const SalesReport = () => {
               name: med.name,
               quantity: med.quantity,
               sellingPrice: med.sellingPrice,
-              costPrice: med.costPrice ?? 0, // Ensure costPrice is always included
+              costPrice: med.costPrice ? med.costPrice : 0, // Ensure costPrice is always included
             };
           }) || [],
         };

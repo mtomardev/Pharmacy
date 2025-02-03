@@ -1,40 +1,49 @@
-import { addDoc, collection, serverTimestamp, doc, setDoc } from "firebase/firestore";
-import { db } from "../firebase";
+import { collection, doc, getDocs, setDoc } from "firebase/firestore";
+import { db } from "../firebase"; // Import Firestore instance
 
-const saveInvoiceToFirestore = async (customerId, customerName, customerPhone, selectedMedicines, totalPrice) => {
+const saveInvoiceToFirestore = async (
+  customerId,
+  customerName,
+  customerPhone,
+  selectedMedicines,
+  totalPrice
+) => {
   try {
-    // Save invoice in sales collection first to get the ID
-    const invoiceRef = await addDoc(collection(db, "sales"), {});
+    const invoiceId = Date.now().toString(); // Generate unique invoice ID
+
+    // 🔥 Fetch all medicines from inventory to get costPrice
+    const inventorySnapshot = await getDocs(collection(db, "medicines")); // Adjust collection name if needed
+    const inventoryData = inventorySnapshot.docs.reduce((acc, doc) => {
+      acc[doc.id] = doc.data().costPrice ?? 0; // Store costPrice for each medicine
+      return acc;
+    }, {});
+
+    // ✅ Add costPrice to each medicine before saving
+    const medicinesWithCost = selectedMedicines.map((med) => ({
+      id: med.id,
+      name: med.name,
+      quantity: med.quantity,
+      sellingPrice: med.sellingPrice,
+      mrp: med.mrp,
+      costPrice: inventoryData[med.id] ?? 0, // Fetch costPrice from inventory
+    }));
+
+    // ✅ Save invoice in Firestore with costPrice included
     const invoiceData = {
-      invoiceId: invoiceRef.id, // Use Firestore ID as Bill Number
-      customerId: customerId || null,
+      invoiceId,
+      customerId,
       customerName,
       customerPhone,
-      medicines: selectedMedicines.map((medicine) => ({
-        id: medicine.id,
-        name: medicine.name,
-        quantity: medicine.quantity,
-        sellingPrice: medicine.sellingPrice,
-        mrp: medicine.mrp || 0, // Ensure MRP is always present
-      })),
-      
+      medicines: medicinesWithCost, // 🔥 Now includes costPrice
       totalPrice,
-      timestamp: serverTimestamp(), // Auto-generate timestamp
+      timestamp: new Date(),
     };
 
-    // Update Firestore document with invoice data
-    await setDoc(invoiceRef, invoiceData);
-    console.log("Invoice saved with ID:", invoiceRef.id);
+    await setDoc(doc(db, "sales", invoiceId), invoiceData); // Save invoice in Firestore
     
-    // If customer exists, also store invoice under customers/{customerId}/invoices
-    if (customerId) {
-      const customerInvoiceRef = doc(db, `customers/${customerId}/invoices/${invoiceRef.id}`);
-      await setDoc(customerInvoiceRef, invoiceData);
-      console.log("Invoice also saved under customer profile:", customerId);
-    }
-
+    console.log("Invoice saved successfully:", invoiceData);
     alert("Invoice saved successfully!");
-    return { ...invoiceData, invoiceId: invoiceRef.id }; // Return invoice data
+    return invoiceData;
   } catch (error) {
     console.error("Error saving invoice:", error);
     alert("Failed to save invoice.");
