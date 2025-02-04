@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { collection, getDocs, deleteDoc, doc, addDoc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase"; // Import db from firebase.js
 import "./Inventory.css"; // Custom styles for the layout
+import ExcelUpload from "./ExcelUpload";
 
 const Inventory = () => {
   const [medicines, setMedicines] = useState([]);
@@ -236,6 +237,8 @@ const Inventory = () => {
       <button onClick={toggleAddForm} className="btn-toggle-form">
         {showAddForm ? "Close Add Medicine Form" : "Add Medicine"}
       </button>
+
+      <ExcelUpload />
 
       {/* Add Medicine Form */}
       {showAddForm && (
