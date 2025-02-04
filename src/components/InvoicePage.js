@@ -62,11 +62,11 @@ const InvoicePage = () => {
       setFilteredMedicines([]); // Show nothing if the search term is empty
     } else {
       const lowerCaseSearchTerm = searchTerm.toLowerCase();
-      const results = medicines.filter(
-        (medicine) =>
-          medicine.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-          (medicine.salt && medicine.salt.toLowerCase().includes(lowerCaseSearchTerm)) // Check for salt
-      );
+      const results = medicines.filter((medicine) => {
+        const nameMatch = medicine.name?.toLowerCase().includes(lowerCaseSearchTerm);
+        const saltMatch = String(medicine.salt || "").toLowerCase().includes(lowerCaseSearchTerm);
+        return nameMatch || saltMatch;
+      });      
       setFilteredMedicines(results); // Update filtered medicines based on search
     }
   }, [searchTerm, medicines]);
