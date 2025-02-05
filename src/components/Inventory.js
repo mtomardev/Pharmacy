@@ -44,7 +44,7 @@ const Inventory = () => {
     const filtered = medicines.filter(
       (medicine) =>
         medicine.name.toLowerCase().includes(lowerCaseSearchTerm) ||
-        (medicine.salt && medicine.salt.toLowerCase().includes(lowerCaseSearchTerm)) // Ensure salt exists
+      (medicine.salt && typeof medicine.salt === "string" && medicine.salt.toLowerCase().includes(lowerCaseSearchTerm)) // Ensure salt is a string before calling .toLowerCase
     );
     setFilteredMedicines(filtered);
   }, [searchTerm, medicines]);
@@ -134,6 +134,7 @@ const Inventory = () => {
         isH1Drug: tempData.isH1Drug || false,
         hsnCode: tempData.hsnCode,
         batchNo: tempData.batchNo,
+        quantity: parseInt(tempData.quantity) || 0, // Save quantity
       });
       console.log("Medicine updated successfully!");
       setMessage("Medicine updated successfully!");
@@ -171,6 +172,7 @@ const Inventory = () => {
         isH1Drug: tempData.isH1Drug || false, // Add isH1Drug field
         hsnCode: tempData.hsnCode, // New field
         batchNo: tempData.batchNo, // New field
+        quantity: parseInt(tempData.quantity) || 0,  // Save quantity
       });
       setMessage("Medicine added successfully!");
       setShowAddForm(false); // Close the Add Medicine form
@@ -282,6 +284,17 @@ const Inventory = () => {
                 required
               />
             </div>
+            
+            <div className="form-group">
+              <label>Quantity:</label>
+              <input
+                type="number"
+                value={tempData.quantity || ""}
+                onChange={(e) => setTempData({ ...tempData, quantity: e.target.value })}
+                required
+              />
+            </div>
+
             <div className="form-group">
               <label>Exp:</label>
               <input
@@ -381,6 +394,7 @@ const Inventory = () => {
               <th>Batch No</th>
               <th>Name</th>
               <th>Salt</th>
+              <th>Quantity</th>
               <th>Exp</th>
               <th>Scheme</th>
               <th>MRP</th>
@@ -448,6 +462,20 @@ const Inventory = () => {
                     medicine.salt
                   )}
                 </td>
+                <td>
+                  {editMedicine === medicine.id ? (
+                    <input
+                    type="number"
+                    value={tempData.quantity || ""}
+                    onChange={(e) =>
+                    setTempData({ ...tempData, quantity: e.target.value })
+              }
+            />
+            ) : (
+              medicine.quantity
+            )}
+            </td>
+
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
