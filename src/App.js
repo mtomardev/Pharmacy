@@ -7,6 +7,7 @@ import NavBar from "./components/Navbar"; // Navigation Bar
 import { auth } from "./firebase"; // Firebase Authentication
 import { onAuthStateChanged } from "firebase/auth"; // Listen for auth state changes
 import SalesReport from "./components/SalesReport";
+import ExpensesPage from "./components/ExpensesPage";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -38,6 +39,9 @@ function App() {
 
         {/* Route for SalesReport */}
         <Route path="/salesreport" element={user ? <SalesReport /> : <EmailPasswordAuth />} />
+
+        {/* Route for ExpenseReport */}
+        <Route path="/expensereport" element={user ? <ExpensesPage /> : <EmailPasswordAuth />} />
 
       </Routes>
     </Router>

@@ -41,6 +41,13 @@ const NavBar = ({ user }) => {
         </Link>
       )}
 
+      {/* ExpenseReport Link (only visible if logged in) */}
+      {user && (
+        <Link to="/expensereport" style={{ marginRight: "10px", color: "#fff" }}>
+          Expense Report
+        </Link>
+      )}
+
       {/* Sign Out Button (only visible if logged in) */}
       {user ? (
         <button onClick={handleSignOut} style={{ color: "#fff" }}>
