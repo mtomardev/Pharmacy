@@ -48,6 +48,13 @@ const NavBar = ({ user }) => {
         </Link>
       )}
 
+       {/* CustomerDetails Link (only visible if logged in) */}
+       {user && (
+        <Link to="/customerdetails" style={{ marginRight: "10px", color: "#fff" }}>
+          Customer Details
+        </Link>
+      )}
+
       {/* Sign Out Button (only visible if logged in) */}
       {user ? (
         <button onClick={handleSignOut} style={{ color: "#fff" }}>

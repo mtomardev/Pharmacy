@@ -13,6 +13,7 @@ const Inventory = () => {
   const [showAddForm, setShowAddForm] = useState(false); // For toggling the Add Medicine form
   const [message, setMessage] = useState(""); // For feedback messages
   const [selectedRowIndex, setSelectedRowIndex] = useState(null); // For arrow key navigation
+  const [distributors, setDistributors] = useState([]);
 
   // Fetch medicines from Firestore
   const fetchMedicines = async () => {
@@ -26,6 +27,10 @@ const Inventory = () => {
       medicinesData.sort((a, b) => a.name.localeCompare(b.name));
       setMedicines(medicinesData);
       setFilteredMedicines(medicinesData); // Initialize filteredMedicines
+
+       // Extract unique distributors
+    const distributorSet = new Set(medicinesData.map((med) => med.distributor).filter(Boolean));
+    setDistributors([...distributorSet]); 
     } catch (error) {
       setMessage("Error fetching medicines.");
     }
@@ -360,12 +365,30 @@ const Inventory = () => {
             </div>
             <div className="form-group">
               <label>Distributor:</label>
-              <input
+              <select
+    value={tempData.distributor || ""}
+    onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
+  >
+    <option value="">Select Distributor</option>
+    {distributors.map((dist, index) => (
+      <option key={index} value={dist}>
+        {dist}
+      </option>
+    ))}
+  </select>
+  <input
+    type="text"
+    placeholder="Or enter new distributor"
+    value={tempData.distributor || ""}
+    onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
+  />
+              
+              {/* <input
                 type="text"
                 value={tempData.distributor || ""}
                 onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
                 required
-              />
+              /> */}
             </div>
             <div className="form-group">
   <label className="h1-drug-label">
@@ -565,7 +588,36 @@ const Inventory = () => {
                     medicine.sellingPrice
                   )}
                 </td>
+
                 <td>
+  {editMedicine === medicine.id ? (
+    <>
+      <select
+        value={tempData.distributor || ""}
+        onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
+      >
+        <option value="">Select Distributor</option>
+        {distributors.map((dist, index) => (
+          <option key={index} value={dist}>
+            {dist}
+          </option>
+        ))}
+      </select>
+      <input
+        type="text"
+        placeholder="Or enter new distributor"
+        value={tempData.distributor || ""}
+        onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
+      />
+    </>
+  ) : (
+    medicine.distributor
+  )}
+</td>
+
+
+
+                {/* <td>
                   {editMedicine === medicine.id ? (
                     <input
                       type="text"
@@ -577,7 +629,7 @@ const Inventory = () => {
                   ) : (
                     medicine.distributor
                   )}
-                </td>
+                </td> */}
                 <td>
                   {editMedicine === medicine.id ? (
                     <input

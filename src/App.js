@@ -8,6 +8,9 @@ import { auth } from "./firebase"; // Firebase Authentication
 import { onAuthStateChanged } from "firebase/auth"; // Listen for auth state changes
 import SalesReport from "./components/SalesReport";
 import ExpensesPage from "./components/ExpensesPage";
+import CustomerDetails from "./components/CustomerDetails";
+import CustomerPurchaseHistory from "./components/CustomerPurchaseHistory";
+import InvoiceDetails from "./components/InvoiceDetails";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -41,7 +44,19 @@ function App() {
         <Route path="/salesreport" element={user ? <SalesReport /> : <EmailPasswordAuth />} />
 
         {/* Route for ExpenseReport */}
-        <Route path="/expensereport" element={user ? <ExpensesPage /> : <EmailPasswordAuth />} />
+        <Route path="/expensereport" element={user ? <ExpensesPage/> : <EmailPasswordAuth />} />
+
+        {/* Route for CustomerDetails */}
+        <Route path="/customerdetails" element={user ? <CustomerDetails/> : <EmailPasswordAuth />} />
+        
+        {/* This will ensure the page loads when clicking View on the Customer Details Page. */}
+        <Route path="/customer/:customerId" element={<CustomerPurchaseHistory />} />
+
+        {/* This will ensure the page loads when clicking View on the Invoice Details Page. */}
+        <Route path="/customer/:customerId/invoice/:invoiceId" element={<InvoiceDetails />} />
+
+
+
 
       </Routes>
     </Router>
