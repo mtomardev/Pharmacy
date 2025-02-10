@@ -11,6 +11,7 @@ import ExpensesPage from "./components/ExpensesPage";
 import CustomerDetails from "./components/CustomerDetails";
 import CustomerPurchaseHistory from "./components/CustomerPurchaseHistory";
 import InvoiceDetails from "./components/InvoiceDetails";
+import Distributors from "./components/Distributors";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -54,6 +55,9 @@ function App() {
 
         {/* This will ensure the page loads when clicking View on the Invoice Details Page. */}
         <Route path="/customer/:customerId/invoice/:invoiceId" element={<InvoiceDetails />} />
+
+        {/* Route for CustomerDetails */}
+        <Route path="/distributors" element={user ? <Distributors/> : <EmailPasswordAuth />} />
 
 
 

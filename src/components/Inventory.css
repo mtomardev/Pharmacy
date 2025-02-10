@@ -100,6 +100,7 @@ button:hover {
 .medicine-table-container {
   max-height: 500px; /* Adjust height as needed */
   overflow-y: auto;
+  overflow-x: auto;
   border: 1px solid #ccc; /* Optional: For better visual separation */
 }
 
@@ -190,3 +191,9 @@ button:hover {
   /* color: #ffffff; /* Dark yellow text */
 /* }
  */ 
+
+ .selected-row {
+  background-color: rgba(0, 123, 255, 0.2); /* Light blue highlight */
+  outline: 2px solid #007bff; /* Blue border for clarity */
+}
+

@@ -3,6 +3,7 @@ import { collection, getDocs, deleteDoc, doc, addDoc, updateDoc } from "firebase
 import { db } from "../firebase"; // Import db from firebase.js
 import "./Inventory.css"; // Custom styles for the layout
 import ExcelUpload from "./ExcelUpload";
+import { useRef } from "react";
 
 const Inventory = () => {
   const [medicines, setMedicines] = useState([]);
@@ -14,6 +15,8 @@ const Inventory = () => {
   const [message, setMessage] = useState(""); // For feedback messages
   const [selectedRowIndex, setSelectedRowIndex] = useState(null); // For arrow key navigation
   const [distributors, setDistributors] = useState([]);
+  const [selectedColumnIndex, setSelectedColumnIndex] = useState(3); // Default to "Name" column
+
 
   // Fetch medicines from Firestore
   const fetchMedicines = async () => {
@@ -36,6 +39,9 @@ const Inventory = () => {
     }
   };
 
+  const rowRefs = useRef([]);
+  const inputRefs = useRef({});
+
   // Clear tempData when editMedicine changes to null
   useEffect(() => {
     if (editMedicine === null) {
@@ -57,45 +63,144 @@ const Inventory = () => {
   // Keyboard shortcut for Add Medicine (Ctrl + M)
   useEffect(() => {
     const handleKeyDown = (event) => {
+      // Prevent default browser shortcuts when using Ctrl + Key
+      if (event.ctrlKey && ["m", "e", "s", "ArrowLeft", "ArrowRight"].includes(event.key)) {
+        event.preventDefault();
+      }
+  
+      // Ctrl + M → Toggle Add Medicine Form
       if (event.ctrlKey && event.key === "m") {
-        setShowAddForm((prevState) => !prevState); // Toggle form visibility on Ctrl + M
+        setShowAddForm((prevState) => !prevState);
+      }
+  
+      // Ctrl + E → Edit current row
+      if (event.ctrlKey && event.key === "e" && selectedRowIndex !== null) {
+        const selectedMedicine = filteredMedicines[selectedRowIndex];
+        handleEditClick(selectedMedicine, selectedRowIndex);
+        setSelectedColumnIndex(1); // Start editing from "HSN Code" column
+      }
+  
+      // Ctrl + S → Save Medicine
+      if (event.ctrlKey && event.key === "s" && editMedicine !== null) {
+        saveMedicine(editMedicine, tempData);
+      }
+  
+      // Move between rows using Up/Down Arrow keys
+      if (!event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+        event.preventDefault(); // Prevent page scrolling
+        setSelectedRowIndex((prevIndex) => {
+          let newIndex =
+            event.key === "ArrowUp"
+              ? prevIndex === 0 || prevIndex === null
+                ? filteredMedicines.length - 1
+                : prevIndex - 1
+              : prevIndex === filteredMedicines.length - 1 || prevIndex === null
+              ? 0
+              : prevIndex + 1;
+  
+          // Keep the selected column while moving rows
+          setSelectedColumnIndex((prevColumn) => prevColumn);
+  
+          // Scroll row into view
+          rowRefs.current[newIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  
+          return newIndex;
+        });
+      }
+  
+      // Ctrl + Left Arrow → Move Left (One Column at a Time)
+      if (event.ctrlKey && event.key === "ArrowLeft" && editMedicine !== null) {
+        event.preventDefault();
+        setSelectedColumnIndex((prevIndex) => {
+          const newIndex = prevIndex > 1 ? prevIndex - 1 : 1; // Stop at "HSN Code" column
+          focusInput(selectedRowIndex, newIndex);
+          return newIndex;
+        });
+      }
+  
+      // Ctrl + Right Arrow → Move Right (One Column at a Time)
+      if (event.ctrlKey && event.key === "ArrowRight" && editMedicine !== null) {
+        event.preventDefault();
+        setSelectedColumnIndex((prevIndex) => {
+          const newIndex = prevIndex < 13 ? prevIndex + 1 : 13; // Stop at "H1 Drug" column
+          focusInput(selectedRowIndex, newIndex);
+          return newIndex;
+        });
       }
     };
-
-    window.addEventListener("keydown", handleKeyDown);
-
-    // Cleanup listener
+  
+    document.addEventListener("keydown", handleKeyDown);
+  
     return () => {
-      window.removeEventListener("keydown", handleKeyDown);
+      document.removeEventListener("keydown", handleKeyDown);
     };
-  }, []);
+  }, [filteredMedicines, selectedRowIndex, editMedicine, tempData]);
+  
+  
+  
+  
+  
 
-  // Handle arrow key navigation
-  useEffect(() => {
-    const handleArrowKeyNavigation = (event) => {
-      if (filteredMedicines.length === 0 || editMedicine !== null) return;
+ 
 
-      if (event.key === "ArrowUp") {
-        setSelectedRowIndex((prevIndex) =>
-          prevIndex === null || prevIndex === 0
-            ? filteredMedicines.length - 1
-            : prevIndex - 1
-        );
-      } else if (event.key === "ArrowDown") {
-        setSelectedRowIndex((prevIndex) =>
-          prevIndex === null || prevIndex === filteredMedicines.length - 1
-            ? 0
-            : prevIndex + 1
-        );
-      }
-    };
+useEffect(() => {
+  const handleArrowKeyNavigation = (event) => {
+    if (filteredMedicines.length === 0 || editMedicine === null) return;
 
-    window.addEventListener("keydown", handleArrowKeyNavigation);
+    // Move between rows (UP/DOWN)
+    if (event.key === "ArrowUp" || event.key === "ArrowDown") {
+      setSelectedRowIndex((prevIndex) => {
+        let newIndex;
 
-    return () => {
-      window.removeEventListener("keydown", handleArrowKeyNavigation);
-    };
-  }, [filteredMedicines, editMedicine]);
+        if (event.key === "ArrowUp") {
+          newIndex = prevIndex === null || prevIndex === 0 ? filteredMedicines.length - 1 : prevIndex - 1;
+        } else {
+          newIndex = prevIndex === null || prevIndex === filteredMedicines.length - 1 ? 0 : prevIndex + 1;
+        }
+
+        // Keep the selected column while moving rows
+        setSelectedColumnIndex((prevColumn) => prevColumn);
+
+        // Scroll row into view
+        rowRefs.current[newIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+
+        return newIndex;
+      });
+    } 
+    // Move between columns using Ctrl + Left
+    else if (event.ctrlKey && event.key === "ArrowLeft") {
+      event.preventDefault();
+      setSelectedColumnIndex((prevIndex) => {
+        const newIndex = prevIndex > 3 ? prevIndex - 1 : 3; // Prevent moving before "Name" column
+        setTimeout(() => focusInput(selectedRowIndex, newIndex), 50); // Ensure smooth focus change
+        return newIndex;
+      });
+    } 
+    // Move between columns using Ctrl + Right
+    else if (event.ctrlKey && event.key === "ArrowRight") {
+      event.preventDefault();
+      setSelectedColumnIndex((prevIndex) => {
+        const newIndex = prevIndex < 13 ? prevIndex + 1 : 13; // Prevent moving past last column
+        setTimeout(() => focusInput(selectedRowIndex, newIndex), 50);
+        return newIndex;
+      });
+    }
+  };
+
+  window.addEventListener("keydown", handleArrowKeyNavigation);
+  return () => {
+    window.removeEventListener("keydown", handleArrowKeyNavigation);
+  };
+}, [filteredMedicines, editMedicine, selectedRowIndex]);
+
+
+const focusInput = (rowIndex, columnIndex) => {
+  const key = `${rowIndex}-${columnIndex}`;
+  if (inputRefs.current[key]) {
+    inputRefs.current[key].focus();
+  }
+};
+  
 
   // Calculate discount based on MRP and Selling Price
   const calculateDiscount = (mrp, sellingPrice) => {
@@ -120,37 +225,25 @@ const Inventory = () => {
   };
   
 
-  // Save updated medicine data to Firestore
-  const saveMedicine = async (id) => {
+ 
+  const saveMedicine = async (id, updatedData = tempData) => {
     try {
-      const discount = calculateDiscount(tempData.mrp, tempData.sellingPrice);
-      console.log("Saving data:", tempData); // Log tempData before saving
+      const discount = calculateDiscount(updatedData.mrp, updatedData.sellingPrice);
       const medicineRef = doc(db, "medicines", id);
       await updateDoc(medicineRef, {
-        name: tempData.name,
-        salt: tempData.salt,
-        expiryDate: tempData.expiryDate,
-        scheme: tempData.scheme,
-        mrp: parseFloat(tempData.mrp),
-        costPrice: parseFloat(tempData.costPrice),
-        sellingPrice: parseFloat(tempData.sellingPrice),
+        ...updatedData, // Use the latest tempData
         discount: parseFloat(discount),
-        distributor: tempData.distributor,
-        isH1Drug: tempData.isH1Drug || false,
-        hsnCode: tempData.hsnCode,
-        batchNo: tempData.batchNo,
-        quantity: parseInt(tempData.quantity) || 0, // Save quantity
       });
-      console.log("Medicine updated successfully!");
+  
       setMessage("Medicine updated successfully!");
-      setEditMedicine(null); // Clear the edit state
-      setTempData({}); // Clear tempData after saving
-      fetchMedicines(); // Refresh the medicines list
+      setEditMedicine(null);
+      setTempData({});
+      fetchMedicines(); // Refresh list
     } catch (error) {
-      console.error("Error saving medicine:", error); // Log any errors during the save
       setMessage("Error saving medicine.");
     }
   };
+   
   
 
   // Cancel editing and revert to original values
@@ -432,6 +525,7 @@ const Inventory = () => {
           <tbody>
             {filteredMedicines.map((medicine, index) => (
               <tr
+              ref={(el) => (rowRefs.current[index] = el)}
               key={medicine.id}
               className={`${selectedRowIndex === index ? "selected-row" : ""} ${
                 medicine.isH1Drug ? "highlight-h1" : ""
@@ -442,9 +536,11 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                    ref={(el) => (inputRefs.current[`${index}-1`] = el)} // Store reference for column 1
                       type="text"
                       value={tempData.hsnCode || ""}
                       onChange={(e) => setTempData({ ...tempData, hsnCode: e.target.value })}
+                      autoFocus={selectedColumnIndex === 1} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.hsnCode
@@ -453,9 +549,11 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                      ref={(el) => (inputRefs.current[`${index}-2`] = el)} // Store reference for column 2
                       type="text"
                       value={tempData.batchNo || ""}
                       onChange={(e) => setTempData({ ...tempData, batchNo: e.target.value })}
+                      autoFocus={selectedColumnIndex === 2} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.batchNo
@@ -464,9 +562,11 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                    ref={(el) => (inputRefs.current[`${index}-3`] = el)} // Store reference for column 3
                     type="text"
                     value={tempData.name || ""}
                     onChange={(e) => setTempData({ ...tempData, name: e.target.value })}
+                    autoFocus={selectedColumnIndex === 3} // Ensure focus starts here
                   />
                   ) : (
                     medicine.name
@@ -475,11 +575,13 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                      ref={(el) => (inputRefs.current[`${index}-4`] = el)}
                       type="text"
                       value={tempData.salt || ""}
                       onChange={(e) =>
                         setTempData({ ...tempData, salt: e.target.value })
                       }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.salt
@@ -488,11 +590,13 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                    ref={(el) => (inputRefs.current[`${index}-5`] = el)}
                     type="number"
                     value={tempData.quantity || ""}
                     onChange={(e) =>
                     setTempData({ ...tempData, quantity: e.target.value })
               }
+              autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
             />
             ) : (
               medicine.quantity
@@ -502,11 +606,13 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                      ref={(el) => (inputRefs.current[`${index}-6`] = el)}
                       type="date"
                       value={tempData.expiryDate || ""}
                       onChange={(e) =>
                         setTempData({ ...tempData, expiryDate: e.target.value })
                       }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.expiryDate
@@ -515,11 +621,13 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                      ref={(el) => (inputRefs.current[`${index}-7`] = el)}
                       type="text"
                       value={tempData.scheme || ""}
                       onChange={(e) =>
                         setTempData({ ...tempData, scheme: e.target.value })
                       }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.scheme
@@ -528,11 +636,13 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                    ref={(el) => (inputRefs.current[`${index}-8`] = el)}
                       type="number"
                       value={tempData.mrp || ""}
                       onChange={(e) =>
                         setTempData({ ...tempData, mrp: e.target.value })
                       }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.mrp
@@ -541,11 +651,13 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                    ref={(el) => (inputRefs.current[`${index}-9`] = el)}
                       type="number"
                       value={tempData.costPrice || ""}
                       onChange={(e) =>
                         setTempData({ ...tempData, costPrice: e.target.value })
                       }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.costPrice
@@ -555,6 +667,7 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
+                    ref={(el) => (inputRefs.current[`${index}-10`] = el)}
                       type="number"
                       value={tempData.discount || ""}
                       onChange={(e) => {
@@ -565,6 +678,7 @@ const Inventory = () => {
                         );
                         setTempData({ ...tempData, discount, sellingPrice });
                       }}
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.discount
@@ -573,7 +687,7 @@ const Inventory = () => {
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
-                      type="number"
+                    ref={(el) => (inputRefs.current[`${index}-11`] = el)}                      type="number"
                       value={tempData.sellingPrice || ""}
                       onChange={(e) => {
                         const sellingPrice = parseFloat(e.target.value);
@@ -583,6 +697,7 @@ const Inventory = () => {
                         );
                         setTempData({ ...tempData, sellingPrice, discount });
                       }}
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.sellingPrice
@@ -638,6 +753,7 @@ const Inventory = () => {
                       onChange={(e) =>
                         setTempData({ ...tempData, isH1Drug: e.target.checked })
                       }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
                     />
                   ) : (
                     medicine.isH1Drug ? "Yes" : "No"

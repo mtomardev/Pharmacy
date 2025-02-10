@@ -55,6 +55,13 @@ const NavBar = ({ user }) => {
         </Link>
       )}
 
+      {/* Distributor Link (only visible if logged in) */}
+      {user && (
+        <Link to="/distributors" style={{ marginRight: "10px", color: "#fff" }}>
+          Distributors
+        </Link>
+      )}
+
       {/* Sign Out Button (only visible if logged in) */}
       {user ? (
         <button onClick={handleSignOut} style={{ color: "#fff" }}>
