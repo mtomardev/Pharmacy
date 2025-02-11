@@ -18,6 +18,37 @@ const Inventory = () => {
   const [selectedColumnIndex, setSelectedColumnIndex] = useState(3); // Default to "Name" column
 
 
+  const distributorRef = useRef(null);
+  const nameInputRef = useRef(null);
+
+  useEffect(() => {
+  if (showAddForm) {
+    setTimeout(() => {
+      if (nameInputRef.current) {
+        nameInputRef.current.focus();
+      }
+    }, 100);
+  }
+}, [showAddForm]); 
+
+
+
+  const fetchDistributors = async () => {
+    try {
+      const querySnapshot = await getDocs(collection(db, "distributors"));
+      const distributorData = querySnapshot.docs.map(doc => doc.data().name);
+      console.log("Fetched Distributors:", distributorData); // Debugging log
+      setDistributors(distributorData);
+    } catch (error) {
+      console.error("Error fetching distributors:", error);
+    }
+  };
+  
+
+
+  
+
+
   // Fetch medicines from Firestore
   const fetchMedicines = async () => {
     try {
@@ -31,9 +62,6 @@ const Inventory = () => {
       setMedicines(medicinesData);
       setFilteredMedicines(medicinesData); // Initialize filteredMedicines
 
-       // Extract unique distributors
-    const distributorSet = new Set(medicinesData.map((med) => med.distributor).filter(Boolean));
-    setDistributors([...distributorSet]); 
     } catch (error) {
       setMessage("Error fetching medicines.");
     }
@@ -59,6 +87,12 @@ const Inventory = () => {
     );
     setFilteredMedicines(filtered);
   }, [searchTerm, medicines]);
+
+
+  useEffect(() => {
+    fetchMedicines();
+    fetchDistributors(); // ✅ Now this will not get overwritten
+  }, []);
 
   // Keyboard shortcut for Add Medicine (Ctrl + M)
   useEffect(() => {
@@ -276,6 +310,7 @@ const focusInput = (rowIndex, columnIndex) => {
       setShowAddForm(false); // Close the Add Medicine form
       setTempData({}); // Clear tempData after adding
       fetchMedicines(); // Refresh the medicines list
+      fetchDistributors(); // Fetch distributors when page loads
     } catch (error) {
       setMessage("Error adding medicine.");
     }
@@ -298,9 +333,19 @@ const focusInput = (rowIndex, columnIndex) => {
 
   // Clear tempData when Add Medicine form is toggled open
   const toggleAddForm = () => {
-    setTempData({}); // Clear tempData when opening the Add Medicine form
-    setShowAddForm((prevState) => !prevState);
-  };
+  setTempData({});
+  setShowAddForm((prevState) => {
+    if (!prevState) {
+      setTimeout(() => {
+        if (nameInputRef.current) {
+          nameInputRef.current.focus();
+        }
+      }, 100); // Small delay to ensure focus works
+    }
+    return !prevState;
+  });
+};
+
 
 //Expiry check
   const checkExpiryStatus = (expiryDate) => {
@@ -316,6 +361,9 @@ const focusInput = (rowIndex, columnIndex) => {
     return 'valid';
   }
 };
+
+
+
 
   return (
     <div className="inventory-container">
@@ -349,11 +397,13 @@ const focusInput = (rowIndex, columnIndex) => {
             <div className="form-group">
               <label>Name:</label>
               <input
+                ref={nameInputRef} // Attach ref here
                 type="text"
                 value={tempData.name || ""}
                 onChange={(e) => setTempData({ ...tempData, name: e.target.value })}
                 required
               />
+
             </div>
             <div className="form-group">
               <label>Salt:</label>
@@ -456,33 +506,50 @@ const focusInput = (rowIndex, columnIndex) => {
                 required
               />
             </div>
+
             <div className="form-group">
-              <label>Distributor:</label>
-              <select
-    value={tempData.distributor || ""}
-    onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
-  >
-    <option value="">Select Distributor</option>
-    {distributors.map((dist, index) => (
-      <option key={index} value={dist}>
-        {dist}
-      </option>
-    ))}
-  </select>
-  <input
-    type="text"
-    placeholder="Or enter new distributor"
-    value={tempData.distributor || ""}
-    onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
-  />
-              
-              {/* <input
-                type="text"
-                value={tempData.distributor || ""}
-                onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
-                required
-              /> */}
-            </div>
+  <label>Distributor:</label>
+  <select
+  ref={distributorRef}
+  value={tempData.distributor || ""}
+  onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
+  onFocus={(e) => {
+    setTimeout(() => {
+      e.target.size = distributors.length > 5 ? 5 : distributors.length; // Expand dropdown
+    }, 50);
+  }}
+  onBlur={(e) => {
+    setTimeout(() => {
+      e.target.size = 1; // Collapse dropdown when losing focus
+    }, 200);
+  }}
+  onKeyDown={(e) => {
+    if (["ArrowUp", "ArrowDown", "Enter"].includes(e.key)) {
+      e.stopPropagation(); // Prevents interference with medicine list
+    }
+
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); // Stop page scrolling & external key events
+      const options = Array.from(e.target.options);
+      const selectedIndex = options.findIndex(opt => opt.selected);
+      let newIndex = e.key === "ArrowDown" ? selectedIndex + 1 : selectedIndex - 1;
+      newIndex = Math.max(1, Math.min(newIndex, options.length - 1)); // Keep within bounds
+      options[newIndex].selected = true;
+      setTempData({ ...tempData, distributor: options[newIndex].value });
+    }
+  }}
+>
+  <option value="">Select Distributor</option>
+  {distributors.map((dist, index) => (
+    <option key={index} value={dist}>
+      {dist}
+    </option>
+  ))}
+</select>
+
+</div>
+
+
             <div className="form-group">
   <label className="h1-drug-label">
     H1 Drug:
@@ -707,23 +774,44 @@ const focusInput = (rowIndex, columnIndex) => {
                 <td>
   {editMedicine === medicine.id ? (
     <>
-      <select
-        value={tempData.distributor || ""}
-        onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
-      >
-        <option value="">Select Distributor</option>
-        {distributors.map((dist, index) => (
-          <option key={index} value={dist}>
-            {dist}
-          </option>
-        ))}
-      </select>
-      <input
-        type="text"
-        placeholder="Or enter new distributor"
-        value={tempData.distributor || ""}
-        onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
-      />
+        <select
+  ref={distributorRef}
+  value={tempData.distributor || ""}
+  onChange={(e) => setTempData({ ...tempData, distributor: e.target.value })}
+  onFocus={(e) => {
+    setTimeout(() => {
+      e.target.size = distributors.length > 5 ? 5 : distributors.length; // Expand dropdown
+    }, 50);
+  }}
+  onBlur={(e) => {
+    setTimeout(() => {
+      e.target.size = 1; // Collapse dropdown when losing focus
+    }, 200);
+  }}
+  onKeyDown={(e) => {
+    if (["ArrowUp", "ArrowDown", "Enter"].includes(e.key)) {
+      e.stopPropagation(); // Prevents interference with medicine list
+    }
+
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      e.preventDefault(); // Stop page scrolling & external key events
+      const options = Array.from(e.target.options);
+      const selectedIndex = options.findIndex(opt => opt.selected);
+      let newIndex = e.key === "ArrowDown" ? selectedIndex + 1 : selectedIndex - 1;
+      newIndex = Math.max(1, Math.min(newIndex, options.length - 1)); // Keep within bounds
+      options[newIndex].selected = true;
+      setTempData({ ...tempData, distributor: options[newIndex].value });
+    }
+  }}
+>
+  <option value="">Select Distributor</option>
+  {distributors.map((dist, index) => (
+    <option key={index} value={dist}>
+      {dist}
+    </option>
+  ))}
+</select>
+  
     </>
   ) : (
     medicine.distributor

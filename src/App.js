@@ -12,6 +12,7 @@ import CustomerDetails from "./components/CustomerDetails";
 import CustomerPurchaseHistory from "./components/CustomerPurchaseHistory";
 import InvoiceDetails from "./components/InvoiceDetails";
 import Distributors from "./components/Distributors";
+import DistributorProfile from "./components/DistributorProfile";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -58,7 +59,7 @@ function App() {
 
         {/* Route for CustomerDetails */}
         <Route path="/distributors" element={user ? <Distributors/> : <EmailPasswordAuth />} />
-
+        <Route path="/distributor/:id" element={<DistributorProfile />} />
 
 
 

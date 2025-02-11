@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from "react";
-import { collection, addDoc, getDocs, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
+import { useParams, useNavigate } from "react-router-dom";
 
 const Distributors = () => {
   const [distributors, setDistributors] = useState([]);
   const [newDistributor, setNewDistributor] = useState({ name: "", phone: "", gst: "", additionalInfo: "" });
   const [deleteDistributorId, setDeleteDistributorId] = useState(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchDistributors();
@@ -61,7 +63,7 @@ const Distributors = () => {
               <td>{index + 1}</td>
               <td>{dist.name}</td>
               <td>{dist.phone}</td>
-              <td><button>View</button></td>
+              <td><button onClick={() => navigate(`/distributor/${dist.id}`)}>View</button></td>
               <td><button onClick={() => confirmDeleteDistributor(dist.id)}>Delete</button></td>
             </tr>
           ))}
@@ -71,6 +73,7 @@ const Distributors = () => {
         <div className="popup">
           <p>Are you sure you want to delete this distributor?</p>
           <button onClick={deleteDistributor}>Yes</button>
+          
           <button onClick={() => setDeleteDistributorId(null)}>No</button>
         </div>
       )}
