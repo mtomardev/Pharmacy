@@ -99,31 +99,36 @@ const Inventory = () => {
   // Keyboard shortcut for Add Medicine (Ctrl + M)
   useEffect(() => {
     const handleKeyDown = (event) => {
-      // Prevent default browser shortcuts when using Ctrl + Key
-      if (event.ctrlKey && ["m", "e", "s", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        event.preventDefault(); 
-        event.stopPropagation();
+      // Prevent default browser shortcuts when using Alt + Shift + Key
+      if (event.altKey && event.shiftKey && ["m", "e", "s"].includes(event.key)) {
+        event.preventDefault();
       }
-  
-      // Ctrl + M → Toggle Add Medicine Form
-      if (event.ctrlKey && event.key === "m") {
+
+      // Alt + M → Toggle Add Medicine Form
+      if (event.altKey && event.key.toLowerCase() === "m") {
+        event.preventDefault(); // Stop browser shortcuts
         setShowAddForm((prevState) => !prevState);
-      }
-  
-      // Ctrl + E → Edit current row
-      if (event.ctrlKey && event.key === "e" && selectedRowIndex !== null) {
+        console.log("Shortcut Alt + M Triggered!");
+    }
+
+      // Alt + E → Edit current row
+      if (event.altKey && event.key.toLowerCase() === "e" && selectedRowIndex !== null) {
+        event.preventDefault(); // Stop browser shortcuts
         const selectedMedicine = filteredMedicines[selectedRowIndex];
         handleEditClick(selectedMedicine, selectedRowIndex);
         setSelectedColumnIndex(1); // Start editing from "HSN Code" column
-      }
-  
-      // Ctrl + S → Save Medicine
-      if (event.ctrlKey && event.key === "s" && editMedicine !== null) {
+        console.log("Shortcut Alt + E Triggered!");
+    }
+
+      // Alt + S → Save Medicine
+      if (event.altKey && event.key.toLowerCase() === "s" && editMedicine !== null) {
+        event.preventDefault(); // Prevent browser shortcuts
         saveMedicine(editMedicine, tempData);
-      }
-  
+        console.log("Shortcut Alt + S Triggered!");
+    }
+
       // Move between rows using Up/Down Arrow keys
-      if (!event.ctrlKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
+      if (!event.altKey && !event.shiftKey && (event.key === "ArrowUp" || event.key === "ArrowDown")) {
         event.preventDefault(); // Prevent page scrolling
         setSelectedRowIndex((prevIndex) => {
           let newIndex =
@@ -134,17 +139,17 @@ const Inventory = () => {
               : prevIndex === filteredMedicines.length - 1 || prevIndex === null
               ? 0
               : prevIndex + 1;
-  
+
           // Keep the selected column while moving rows
           setSelectedColumnIndex((prevColumn) => prevColumn);
-  
+
           // Scroll row into view
           rowRefs.current[newIndex]?.scrollIntoView({ behavior: "smooth", block: "nearest" });
-  
+
           return newIndex;
         });
       }
-  
+
       // Ctrl + Left Arrow → Move Left (One Column at a Time)
       if (event.ctrlKey && event.key === "ArrowLeft" && editMedicine !== null) {
         event.preventDefault();
@@ -154,7 +159,7 @@ const Inventory = () => {
           return newIndex;
         });
       }
-  
+
       // Ctrl + Right Arrow → Move Right (One Column at a Time)
       if (event.ctrlKey && event.key === "ArrowRight" && editMedicine !== null) {
         event.preventDefault();
@@ -165,14 +170,14 @@ const Inventory = () => {
         });
       }
     };
-  
+
     document.addEventListener("keydown", handleKeyDown);
-  
+
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [filteredMedicines, selectedRowIndex, editMedicine, tempData]);
-  
+}, [filteredMedicines, selectedRowIndex, editMedicine, tempData]);
+
   
   
   

@@ -12,6 +12,9 @@ const DistributorProfile = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(false);
   const [purchases, setPurchases] = useState([]);
   const [newPurchase, setNewPurchase] = useState({ billNumber: "", billDate: "", totalBill: "", notes: "", finalPrice: "" });
+  const [editIndex, setEditIndex] = useState(null);
+  const [editedPurchase, setEditedPurchase] = useState({});
+  const [deletePurchaseId, setDeletePurchaseId] = useState(null);
 
   useEffect(() => {
     fetchDistributor();
@@ -33,16 +36,16 @@ const DistributorProfile = () => {
     setPurchases(purchaseData);
   };
 
-  const handleEdit = () => setEditMode(true);
+  const handleEditDistributor = () => setEditMode(true);
 
-  const handleUpdate = async () => {
+  const handleUpdateDistributor = async () => {
     const docRef = doc(db, "distributors", id);
     await updateDoc(docRef, updatedDistributor);
     setDistributor(updatedDistributor);
     setEditMode(false);
   };
 
-  const handleDelete = async () => {
+  const handleDeleteDistributor = async () => {
     await deleteDoc(doc(db, "distributors", id));
     navigate("/distributors");
   };
@@ -52,6 +55,30 @@ const DistributorProfile = () => {
     await addDoc(collection(db, `distributors/${id}/purchases`), newPurchase);
     setNewPurchase({ billNumber: "", billDate: "", totalBill: "", notes: "", finalPrice: "" });
     fetchPurchases();
+  };
+
+  const handleEditPurchase = (purchase, index) => {
+    setEditIndex(index);
+    setEditedPurchase(purchase);
+  };
+
+  const saveEditedPurchase = async (purchaseId) => {
+    const docRef = doc(db, `distributors/${id}/purchases`, purchaseId);
+    await updateDoc(docRef, editedPurchase);
+    fetchPurchases();
+    setEditIndex(null);
+  };
+
+  const confirmDeletePurchase = (purchaseId) => {
+    setDeletePurchaseId(purchaseId);
+  };
+
+  const handleDeletePurchase = async () => {
+    if (deletePurchaseId) {
+      await deleteDoc(doc(db, `distributors/${id}/purchases`, deletePurchaseId));
+      fetchPurchases();
+      setDeletePurchaseId(null);
+    }
   };
 
   return (
@@ -65,7 +92,7 @@ const DistributorProfile = () => {
               <input type="text" value={updatedDistributor.phone} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, phone: e.target.value })} />
               <input type="text" value={updatedDistributor.gst} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, gst: e.target.value })} />
               <textarea value={updatedDistributor.additionalInfo} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, additionalInfo: e.target.value })} />
-              <button onClick={handleUpdate}>Save</button>
+              <button onClick={handleUpdateDistributor}>Save</button>
               <button onClick={() => setEditMode(false)}>Cancel</button>
             </div>
           ) : (
@@ -74,7 +101,7 @@ const DistributorProfile = () => {
               <p>Phone: {distributor.phone}</p>
               <p>GST: {distributor.gst}</p>
               <p>Additional Info: {distributor.additionalInfo}</p>
-              <button onClick={handleEdit}>Edit</button>
+              <button onClick={handleEditDistributor}>Edit</button>
               <button onClick={() => setDeleteConfirm(true)}>Delete</button>
             </>
           )}
@@ -84,7 +111,7 @@ const DistributorProfile = () => {
       {deleteConfirm && (
         <div className="popup">
           <p>Are you sure you want to delete this distributor?</p>
-          <button onClick={handleDelete}>Yes</button>
+          <button onClick={handleDeleteDistributor}>Yes</button>
           <button onClick={() => setDeleteConfirm(false)}>No</button>
         </div>
       )}
@@ -107,20 +134,32 @@ const DistributorProfile = () => {
             <th>Total</th>
             <th>Notes</th>
             <th>Final Price</th>
+            <th>Actions</th>
           </tr>
         </thead>
         <tbody>
-          {purchases.map((purchase) => (
+          {purchases.map((purchase, index) => (
             <tr key={purchase.id}>
-              <td>{purchase.billNumber}</td>
-              <td>{purchase.billDate}</td>
-              <td>{purchase.totalBill}</td>
-              <td>{purchase.notes}</td>
-              <td>{purchase.finalPrice}</td>
+              <td>{editIndex === index ? <input type="text" value={editedPurchase.billNumber} onChange={(e) => setEditedPurchase({ ...editedPurchase, billNumber: e.target.value })} /> : purchase.billNumber}</td>
+              <td>{editIndex === index ? <input type="date" value={editedPurchase.billDate} onChange={(e) => setEditedPurchase({ ...editedPurchase, billDate: e.target.value })} /> : purchase.billDate}</td>
+              <td>{editIndex === index ? <input type="number" value={editedPurchase.totalBill} onChange={(e) => setEditedPurchase({ ...editedPurchase, totalBill: e.target.value })} /> : purchase.totalBill}</td>
+              <td>{editIndex === index ? <textarea value={editedPurchase.notes} onChange={(e) => setEditedPurchase({ ...editedPurchase, notes: e.target.value })} /> : purchase.notes}</td>
+              <td>{editIndex === index ? <input type="number" value={editedPurchase.finalPrice} onChange={(e) => setEditedPurchase({ ...editedPurchase, finalPrice: e.target.value })} /> : purchase.finalPrice}</td>
+              <td>
+                {editIndex === index ? <><button onClick={() => saveEditedPurchase(purchase.id)}>Save</button><button onClick={() => setEditIndex(null)}>Cancel</button></> : <><button onClick={() => handleEditPurchase(purchase, index)}>Edit</button><button onClick={() => confirmDeletePurchase(purchase.id)}>Delete</button></>}
+              </td>
             </tr>
           ))}
         </tbody>
       </table>
+
+      {deletePurchaseId && (
+        <div className="popup">
+          <p>Are you sure you want to delete this purchase?</p>
+          <button onClick={handleDeletePurchase}>Yes</button>
+          <button onClick={() => setDeletePurchaseId(null)}>No</button>
+        </div>
+      )}
     </div>
   );
 };
