@@ -4,6 +4,7 @@ import { db } from "../firebase";
 import { useParams } from "react-router-dom";
 import { Button } from "./ui/button";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "./ui/table";
+import "./General.css";
 
 const CustomerPurchaseHistory = () => {
   const { customerId } = useParams();
@@ -31,13 +32,13 @@ const CustomerPurchaseHistory = () => {
   }, [customerId]);
 
   return (
-    <div className="p-4">
+    <div className="p-4 container">
       {customer && (
         <h1 className="text-xl font-bold mb-4">
           Purchase History for {customer.name} ({customer.phone})
         </h1>
       )}
-      <Table>
+      <Table className="styled-table">
         <TableHead>
           <TableRow>
             <TableCell className="font-bold">Invoice Date</TableCell>

@@ -4,6 +4,7 @@ import { db } from "../firebase"; // Import db from firebase.js
 import "./Inventory.css"; // Custom styles for the layout
 import ExcelUpload from "./ExcelUpload";
 import { useRef } from "react";
+import "./General.css";
 
 const Inventory = () => {
   const [medicines, setMedicines] = useState([]);
@@ -20,6 +21,7 @@ const Inventory = () => {
 
   const distributorRef = useRef(null);
   const nameInputRef = useRef(null);
+  
 
   useEffect(() => {
   if (showAddForm) {
@@ -99,7 +101,8 @@ const Inventory = () => {
     const handleKeyDown = (event) => {
       // Prevent default browser shortcuts when using Ctrl + Key
       if (event.ctrlKey && ["m", "e", "s", "ArrowLeft", "ArrowRight"].includes(event.key)) {
-        event.preventDefault();
+        event.preventDefault(); 
+        event.stopPropagation();
       }
   
       // Ctrl + M → Toggle Add Medicine Form
@@ -366,7 +369,7 @@ const focusInput = (rowIndex, columnIndex) => {
 
 
   return (
-    <div className="inventory-container">
+    <div className="inventory-container container">
       <h1 className="page-title">Pharmacy Management</h1>
 
       {message && <div className="message">{message}</div>}

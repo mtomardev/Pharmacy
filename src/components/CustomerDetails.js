@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 import { Input } from "./ui/input";
 import { Button } from "./ui/button";
 import { Table, TableHead, TableRow, TableCell, TableBody } from "./ui/table";
-
+import "./General.css";
 
 const CustomerDetails = () => {
   const [customers, setCustomers] = useState([]);
@@ -28,15 +28,17 @@ const CustomerDetails = () => {
   );
 
   return (
-    <div className="p-4">
-      <h1 className="text-xl font-bold mb-4">Customer Details</h1>
+    <div className="p-4 container">
+      <h1 className="text-xl font-bold mb-4 title">Customer Details</h1>
+      <div className="card">
       <Input
         placeholder="Search by Name or Phone"
         value={searchQuery}
         onChange={(e) => setSearchQuery(e.target.value)}
         className="mb-4"
       />
-      <Table>
+      </div>
+      <Table className="styled-table card">
         <TableHead>
           <TableRow>
             <TableCell className="font-bold">S.No</TableCell>

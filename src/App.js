@@ -13,6 +13,7 @@ import CustomerPurchaseHistory from "./components/CustomerPurchaseHistory";
 import InvoiceDetails from "./components/InvoiceDetails";
 import Distributors from "./components/Distributors";
 import DistributorProfile from "./components/DistributorProfile";
+import { ThemeProvider } from "./components/ThemeContext";
 
 function App() {
   const [user, setUser] = useState(null);
@@ -27,6 +28,7 @@ function App() {
   }, []);
 
   return (
+    <ThemeProvider>
     <Router>
       <NavBar user={user} /> {/* Display NavBar with user authentication status */}
       <Routes>
@@ -65,6 +67,7 @@ function App() {
 
       </Routes>
     </Router>
+    </ThemeProvider>
   );
 }
 

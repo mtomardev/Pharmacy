@@ -11,3 +11,79 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Light Theme */
+body.light {
+  background: #f4f4f4;
+  color: #333;
+}
+
+body.light .container {
+  background: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Dark Theme */
+body.dark {
+  background: #181818;
+  color: white;
+}
+
+body.dark .container {
+  background: #222;
+  box-shadow: 0 4px 12px rgba(255, 255, 255, 0.1);
+}
+
+/* Navbar Styling */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 20px;
+  background: var(--nav-bg);
+  color: white;
+}
+
+.theme-toggle {
+  border: none;
+  padding: 8px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  background: #007bff;
+  color: white;
+}
+
+.theme-toggle:hover {
+  background: #0056b3;
+}
+
+
+/* DARK MODE */
+.dark-mode {
+  background: #181818;
+  color: white;
+}
+
+.dark-mode .card {
+  background: #222;
+}
+
+.dark-mode .styled-table th {
+  background: #333;
+}
+
+.dark-mode .styled-table tr {
+  color: white;
+}
+
+.dark-mode .btn-primary {
+  background: #007bff;
+}
+
+.dark-mode .btn-delete {
+  background: #c82333;
+}
+
+.dark-mode .btn-view {
+  background: #28a745;
+}
+

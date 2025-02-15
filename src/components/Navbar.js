@@ -2,8 +2,13 @@ import React from "react";
 import { Link } from "react-router-dom"; // React Router for navigation
 import { signOut } from "firebase/auth"; // Firebase sign-out method
 import { auth } from "../firebase"; // Import Firebase authentication
+import { ThemeContext } from "./ThemeContext"; 
+import { useContext } from "react";
 
 const NavBar = ({ user }) => {
+
+  const { theme, toggleTheme } = useContext(ThemeContext);
+
   // Sign-out function
   const handleSignOut = async () => {
     try {
@@ -72,6 +77,11 @@ const NavBar = ({ user }) => {
           Login
         </Link>
       )}
+
+<button onClick={toggleTheme} className="theme-toggle">
+        {theme === "light" ? "🌙 Dark Mode" : "☀️ Light Mode"}
+      </button>
+
     </nav>
   );
 };

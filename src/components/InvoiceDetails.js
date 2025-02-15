@@ -3,6 +3,7 @@ import { useParams } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { Button } from "./ui/button";
+import "./General.css";
 
 const InvoiceDetails = () => {
   const { customerId, invoiceId } = useParams(); // Get both customerId & invoiceId from URL
@@ -29,14 +30,14 @@ const InvoiceDetails = () => {
   }
 
   return (
-    <div className="p-4 border rounded bg-white">
+    <div className="p-4 border rounded bg-white container">
       <h1 className="text-xl font-bold mb-4">Invoice Details</h1>
       <p><strong>Customer:</strong> {invoice.customerName} ({invoice.customerPhone})</p>
       <p><strong>Date:</strong> {invoice.date}</p>
       <p><strong>Total Amount:</strong> ₹{invoice.totalPrice}</p>
       
       <h2 className="text-lg font-bold mt-4">Purchased Medicines</h2>
-      <table className="w-full border mt-2">
+      <table className="w-full border mt-2 styled-table">
         <thead>
           <tr className="bg-gray-200">
             <th className="border p-2">Medicine</th>

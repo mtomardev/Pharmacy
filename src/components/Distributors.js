@@ -2,6 +2,10 @@ import React, { useEffect, useState } from "react";
 import { collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import { useParams, useNavigate } from "react-router-dom";
+// import "./distributor.css";
+import "./General.css";
+
+
 
 const Distributors = () => {
   const [distributors, setDistributors] = useState([]);
@@ -39,7 +43,8 @@ const Distributors = () => {
 
   return (
     <div className="container">
-      <h1>Distributors</h1>
+      <h1 className="title">Distributors</h1>
+      <div className="card">
       <form onSubmit={addDistributor}>
         <input type="text" placeholder="Name" value={newDistributor.name} onChange={(e) => setNewDistributor({ ...newDistributor, name: e.target.value })} required />
         <input type="text" placeholder="Phone" value={newDistributor.phone} onChange={(e) => setNewDistributor({ ...newDistributor, phone: e.target.value })} required />
@@ -47,7 +52,8 @@ const Distributors = () => {
         <input type="text" placeholder="Additional Info" value={newDistributor.additionalInfo} onChange={(e) => setNewDistributor({ ...newDistributor, additionalInfo: e.target.value })} />
         <button type="submit">Add Distributor</button>
       </form>
-      <table>
+      </div>
+      <table className="styled-table">
         <thead>
           <tr>
             <th>S.No</th>
@@ -63,8 +69,8 @@ const Distributors = () => {
               <td>{index + 1}</td>
               <td>{dist.name}</td>
               <td>{dist.phone}</td>
-              <td><button onClick={() => navigate(`/distributor/${dist.id}`)}>View</button></td>
-              <td><button onClick={() => confirmDeleteDistributor(dist.id)}>Delete</button></td>
+              <td><button className="btn-view" onClick={() => navigate(`/distributor/${dist.id}`)}>View</button></td>
+              <td><button className="btn-delete" onClick={() => confirmDeleteDistributor(dist.id)}>Delete</button></td>
             </tr>
           ))}
         </tbody>
@@ -72,9 +78,9 @@ const Distributors = () => {
       {deleteDistributorId && (
         <div className="popup">
           <p>Are you sure you want to delete this distributor?</p>
-          <button onClick={deleteDistributor}>Yes</button>
+          <button className="btn-confirm" onClick={deleteDistributor}>Yes</button>
           
-          <button onClick={() => setDeleteDistributorId(null)}>No</button>
+          <button className="btn-cancel" onClick={() => setDeleteDistributorId(null)}>No</button>
         </div>
       )}
     </div>

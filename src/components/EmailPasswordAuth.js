@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { auth } from "../firebase"; // Import auth from firebase.js
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "firebase/auth";
+import "./General.css";
 
 const EmailPasswordAuth = () => {
   const [email, setEmail] = useState("");
@@ -43,8 +44,9 @@ const EmailPasswordAuth = () => {
   };
 
   return (
-    <div>
+    <div className="container">
       <h1>Email/Password Authentication</h1>
+      <div className="card">
       {message && <p>{message}</p>}
 
       {user ? (
@@ -82,8 +84,10 @@ const EmailPasswordAuth = () => {
               {isNewUser ? "Log In" : "Sign Up"}
             </span>
           </p>
+          
         </div>
       )}
+      </div>
     </div>
   );
 };

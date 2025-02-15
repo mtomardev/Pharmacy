@@ -4,7 +4,7 @@ import { getAuth } from "firebase/auth"; // Import Firebase Auth
 import { db } from "../firebase"; // Import Firestore instance
 import "./InvoicePage.css"; // Custom styles for the layout
 import saveInvoiceToFirestore from "./saveInvoiceToFirestore";
-
+import "./General.css";
 
 const InvoicePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -232,7 +232,7 @@ const InvoicePage = () => {
   };
   
   return (
-    <div className="invoice-page-container">
+    <div className="invoice-page-container container">
       <h1>Invoice Page</h1>
 
       {/* Mobile Number Search */}

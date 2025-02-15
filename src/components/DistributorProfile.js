@@ -58,16 +58,16 @@ const DistributorProfile = () => {
     <div className="container">
       {distributor ? (
         <>
-          <h1>Distributor Profile</h1>
+          <h1 className="title">Distributor Profile</h1>
           {editMode ? (
-            <>
+            <div className="card">
               <input type="text" value={updatedDistributor.name} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, name: e.target.value })} />
               <input type="text" value={updatedDistributor.phone} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, phone: e.target.value })} />
               <input type="text" value={updatedDistributor.gst} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, gst: e.target.value })} />
               <textarea value={updatedDistributor.additionalInfo} onChange={(e) => setUpdatedDistributor({ ...updatedDistributor, additionalInfo: e.target.value })} />
               <button onClick={handleUpdate}>Save</button>
               <button onClick={() => setEditMode(false)}>Cancel</button>
-            </>
+            </div>
           ) : (
             <>
               <p>Name: {distributor.name}</p>
@@ -99,7 +99,7 @@ const DistributorProfile = () => {
         <button type="submit">Add Purchase</button>
       </form>
 
-      <table>
+      <table className="styled-table">
         <thead>
           <tr>
             <th>Bill Number</th>

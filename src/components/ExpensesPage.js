@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../firebase";
 import { collection, addDoc, getDocs, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import "./General.css";
 
 const ExpensesPage = () => {
   const [expenses, setExpenses] = useState([]);
@@ -102,9 +103,9 @@ const ExpensesPage = () => {
   };
 
   return (
-    <div className="expenses-container">
+    <div className="expenses-container container">
       <h1>Expenses Page</h1>
-      <div className="expense-form">
+      <div className="expense-form card">
         <input type="date" name="date" value={newExpense.date} onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })} />
         <select name="category" value={newExpense.category} onChange={(e) => setNewExpense({ ...newExpense, category: e.target.value })}>
           <option value="">Select Category</option>
@@ -134,7 +135,7 @@ const ExpensesPage = () => {
         )}
       </div>
       <h3>Total Expenses: ₹{calculateTotalExpenses()}</h3>
-      <table>
+      <table className="styled-table card">
         <thead>
           <tr>
             <th>S.No</th>
