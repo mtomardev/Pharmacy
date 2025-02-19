@@ -148,6 +148,18 @@ h1, h2 {
   margin-left: 5px;
 }
 
+.quantity.out-of-stock {
+  color: red !important;
+  font-weight: bold !important;
+}
+
+button.disabled-button {
+  background-color: gray !important;
+  cursor: not-allowed !important;
+  opacity: 0.6 !important;
+}
+
+
 @media print {
   body * {
     visibility: hidden;

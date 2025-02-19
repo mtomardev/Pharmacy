@@ -6,6 +6,8 @@ import "./InvoicePage.css"; // Custom styles for the layout
 import saveInvoiceToFirestore from "./saveInvoiceToFirestore";
 import "./General.css";
 
+import { doc, updateDoc } from "firebase/firestore"; // Import doc and updateDoc
+
 const InvoicePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [medicines, setMedicines] = useState([]); // All medicines from Firestore
@@ -26,6 +28,10 @@ const InvoicePage = () => {
   const [lastInvoice, setLastInvoice] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
 
+ 
+  
+
+
   // Fetch medicines from Firestore once when the component loads
   useEffect(() => {
     const fetchMedicines = async () => {
@@ -36,7 +42,12 @@ const InvoicePage = () => {
           id: doc.id,
           ...doc.data(),
         }));
-        setMedicines(medicinesData); // Store all medicines, including salt
+        setMedicines(
+          medicinesData.map(medicine => ({
+            ...medicine,
+            quantity: Number(medicine.quantity) || 0 // Convert to number and handle potential undefined values
+          }))
+        );         // Store all medicines, including salt
       } catch (error) {
         console.error("Error fetching medicines: ", error.message);
       } finally {
@@ -72,8 +83,26 @@ const InvoicePage = () => {
   }, [searchTerm, medicines]);
 
   // Add a medicine to the invoice
-  const addToInvoice = (medicine) => {
+  const addToInvoice = async (medicine) => {
+    if (medicine.quantity <= 0) {
+      alert("This medicine is out of stock.");
+      return;
+    }
     console.log("Adding Medicine:", medicine); // Debugging log
+
+     // Update Firestore inventory
+  const medicineRef = doc(db, "medicines", medicine.id);
+  await updateDoc(medicineRef, {
+    quantity: medicine.quantity - 1,
+  });
+
+
+  // Fetch the updated medicines after update
+  const updatedMedicines = medicines.map((m) =>
+    m.id === medicine.id ? { ...m, quantity: m.quantity - 1 } : m
+  );
+  setMedicines(updatedMedicines);
+
     const updatedList = [
       ...selectedMedicines,
       {
@@ -91,7 +120,39 @@ const InvoicePage = () => {
     setHighlightedIndex(-1);
   };
   
+  const removeFromInvoice = async (medicineId) => {
+     // Find the removed medicine from selectedMedicines
+     const removedMedicine = selectedMedicines.find(
+      (medicine) => medicine.id === medicineId
+    );
   
+    if (!removedMedicine) return;
+     // Remove the medicine from the selectedMedicines array
+    const updatedList = selectedMedicines.filter(
+      (medicine) => medicine.id !== medicineId
+    );
+    setSelectedMedicines(updatedList);
+    calculateTotal(updatedList);
+  
+    // Restore quantity in Firestore
+    const medicineRef = doc(db, "medicines", medicineId);
+
+    await updateDoc(medicineRef, {
+      quantity: medicines.find((m) => m.id === medicineId).quantity + removedMedicine.quantity, // Restore correct quantity
+    });
+    
+
+     // Fetch updated medicines from Firestore
+  const updatedMedicines = medicines.map((m) =>
+    m.id === medicineId ? { ...m, quantity: m.quantity + 1 } : m
+  );
+  setMedicines(updatedMedicines);
+
+    // Optionally, you can log to see the updated quantity
+  console.log(`Updated quantity for ${removedMedicine.name}: ${removedMedicine.quantity + 1}`);
+
+  };
+    
 
   // Update the total price
   const calculateTotal = (medicinesList) => {
@@ -102,15 +163,48 @@ const InvoicePage = () => {
     setTotalPrice(total);
   };
 
-  // Update quantity in the invoice
-  const updateQuantity = (id, quantity) => {
-    const updatedList = selectedMedicines.map((medicine) =>
-      medicine.id === id ? { ...medicine, quantity } : medicine
-    );
+ 
+  const updateQuantity = async (id, newQuantity) => {
+    if (isNaN(newQuantity) || newQuantity <= 0) {
+      console.error("Invalid quantity input", newQuantity);
+      return;
+    }
+  
+    const updatedList = selectedMedicines.map((medicine) => {
+      if (medicine.id === id) {
+        const quantityDifference = newQuantity - (medicine.quantity || 0);
+        return { ...medicine, quantity: newQuantity };
+      }
+      return medicine;
+    });
+  
     setSelectedMedicines(updatedList);
     calculateTotal(updatedList);
-  };
+  
+    const medicineRef = doc(db, "medicines", id);
+    
+    const originalQuantity = medicines.find((m) => m.id === id)?.quantity || 0;
+const previousQuantity = selectedMedicines.find((m) => m.id === id)?.quantity || 0;
+const quantityDifference = newQuantity - previousQuantity;
 
+await updateDoc(medicineRef, {
+  quantity: originalQuantity - quantityDifference,
+});
+
+  
+    // Refresh the medicine stock
+    const updatedMedicines = medicines.map((m) =>
+      m.id === id ? { ...m, quantity: m.quantity - newQuantity } : m
+    );
+    setMedicines(updatedMedicines);
+  };
+  
+  
+  
+  
+
+
+  
   // Handle keyboard navigation for search results
   const handleKeyDown = (e) => {
     if (e.key === "ArrowDown") {
@@ -175,14 +269,7 @@ const InvoicePage = () => {
   };
 
 
-  // const handleSaveInvoice = async () => {
-  //   if (selectedMedicines.length === 0) {
-  //     alert("No medicines selected for the invoice.");
-  //     return;
-  //   }
   
-  //   await saveInvoiceToFirestore(customerId, customerName, customerPhone, selectedMedicines, totalPrice);
-  // };
   console.log("Final selected medicines before saving:", selectedMedicines);
 
   const handleSaveInvoice = async () => {
@@ -283,14 +370,25 @@ const InvoicePage = () => {
             <div
               key={medicine.id}
               className={`medicine-item ${
-                index === highlightedIndex ? "highlighted" : ""
-              }`}
+                index === highlightedIndex ? "highlighted" : ""}`}
             >
               <span>{medicine.name}</span>
               <span>Salt: {medicine.salt || "N/A"}</span> {/* Display Salt Name */}
               <span>MRP: ₹{medicine.mrp}</span>
               <span>Selling Price: ₹{medicine.sellingPrice}</span>
-              <button onClick={() => addToInvoice(medicine)}>Add</button>
+              {/* Show Quantity with Red if 0 */}
+              <span className={`quantity ${medicine.quantity === 0 ? "out-of-stock" : ""}`}>
+          Quantity: {medicine.quantity > 0 ? medicine.quantity : "Out of Stock"}
+        </span> {/* Show Quantity */}
+        
+        {/* Disable Add Button if Quantity is Zero */}
+        <button 
+          onClick={() => addToInvoice(medicine)} 
+          disabled={medicine.quantity <= 0}
+          className={medicine.quantity <= 0 ? "disabled-button" : ""}
+        >
+          {medicine.quantity > 0 ? "Add" : "Out of Stock"}
+        </button>
             </div>
           ))
         ) : (
@@ -398,20 +496,34 @@ const InvoicePage = () => {
                 <tr key={medicine.id}>
                   <td>{index + 1}</td>
                   <td>
-                    <input
+                    {/* <input
                       type="number"
                       value={medicine.quantity}
                       min="1"
                       onChange={(e) =>
                         updateQuantity(medicine.id, parseInt(e.target.value, 10))
                       }
-                    />
+                    /> */}
+                     <input
+    type="number"
+    value={medicine.quantity}
+    min="1"
+    onChange={(e) =>
+      updateQuantity(medicine.id, parseInt(e.target.value, 10)) // Call updateQuantity with the new quantity
+    }
+  />
                   </td>
                   <td>{medicine.name}</td>
                   <td>₹{medicine.mrp}</td>
                   <td>₹{medicine.sellingPrice}</td>
                   <td>
-                    <button
+                  <button
+                      onClick={() => removeFromInvoice(medicine.id)} // Use the removeFromInvoice function
+                  >
+                    Remove
+                  </button>
+
+                    {/* <button
                       onClick={() =>
                         setSelectedMedicines((prev) =>
                           prev.filter((m) => m.id !== medicine.id)
@@ -419,7 +531,7 @@ const InvoicePage = () => {
                       }
                     >
                       Remove
-                    </button>
+                    </button> */}
                   </td>
                 </tr>
               ))}
