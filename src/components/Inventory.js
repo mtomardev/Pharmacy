@@ -5,6 +5,7 @@ import "./Inventory.css"; // Custom styles for the layout
 import ExcelUpload from "./ExcelUpload";
 import { useRef } from "react";
 import "./General.css";
+import updateAllMedicinesWithLossQuantity from "./updateAllMedicinesWithLossQuantity";
 
 const Inventory = () => {
   const [medicines, setMedicines] = useState([]);
@@ -22,7 +23,7 @@ const Inventory = () => {
   const distributorRef = useRef(null);
   const nameInputRef = useRef(null);
   
-
+  
   useEffect(() => {
   if (showAddForm) {
     setTimeout(() => {
@@ -37,6 +38,7 @@ const Inventory = () => {
 
   const fetchDistributors = async () => {
     try {
+      
       const querySnapshot = await getDocs(collection(db, "distributors"));
       const distributorData = querySnapshot.docs.map(doc => doc.data().name);
       console.log("Fetched Distributors:", distributorData); // Debugging log
@@ -256,6 +258,10 @@ const focusInput = (rowIndex, columnIndex) => {
     return (mrp - (mrp * discount) / 100).toFixed(2);
   };
 
+  
+
+
+
   // Handle Edit click
   const handleEditClick = (medicine, index) => {
     console.log("Editing medicine:", medicine); // Log the medicine being edited
@@ -270,11 +276,19 @@ const focusInput = (rowIndex, columnIndex) => {
  
   const saveMedicine = async (id, updatedData = tempData) => {
     try {
+      const totalPieces = 
+            (parseInt(tempData.quantity) || 0) * (parseInt(tempData.stripsize) || 0) 
+            + (parseInt(tempData.lossQuantity) || 0); // ✅ Include loose pieces
+
+      console.log("save", totalPieces)
+      
       const discount = calculateDiscount(updatedData.mrp, updatedData.sellingPrice);
       const medicineRef = doc(db, "medicines", id);
+      
       await updateDoc(medicineRef, {
         ...updatedData, // Use the latest tempData
         discount: parseFloat(discount),
+        totalPieces: totalPieces, // ✅ Save updated total pieces
       });
   
       setMessage("Medicine updated successfully!");
@@ -298,21 +312,32 @@ const focusInput = (rowIndex, columnIndex) => {
   const addMedicine = async (e) => {
     e.preventDefault();
     try {
+      const totalPieces = 
+      (parseInt(tempData.quantity) || 0) * (parseInt(tempData.stripsize) || 0) 
+      + (parseInt(tempData.lossQuantity) || 0); // ✅ Include loose pieces
+
+      console.log("addmedicine", totalPieces)
+
       const discount = calculateDiscount(tempData.mrp, tempData.sellingPrice);
+
       await addDoc(collection(db, "medicines"), {
         name: tempData.name,
         salt: tempData.salt,
         expiryDate: tempData.expiryDate,
         scheme: tempData.scheme,
-        mrp: parseFloat(tempData.mrp),
-        costPrice: parseFloat(tempData.costPrice),
-        sellingPrice: parseFloat(tempData.sellingPrice),
+        mrp: parseFloat(tempData.mrp) || 0,
+        costPrice: parseFloat(tempData.costPrice) || 0,
+        sellingPrice: parseFloat(tempData.sellingPrice) || 0,
         discount: parseFloat(discount),
         distributor: tempData.distributor,
         isH1Drug: tempData.isH1Drug || false, // Add isH1Drug field
         hsnCode: tempData.hsnCode, // New field
         batchNo: tempData.batchNo, // New field
         quantity: parseInt(tempData.quantity) || 0,  // Save quantity
+        stripsize: tempData.stripsize || 0,
+        totalPieces: totalPieces || 0,
+        priceloosepiece: parseFloat(tempData.priceloosepiece) || 0,
+        lossQuantity: parseInt(tempData.lossQuantity) || 0, 
       });
       setMessage("Medicine added successfully!");
       setShowAddForm(false); // Close the Add Medicine form
@@ -320,7 +345,9 @@ const focusInput = (rowIndex, columnIndex) => {
       fetchMedicines(); // Refresh the medicines list
       fetchDistributors(); // Fetch distributors when page loads
     } catch (error) {
-      setMessage("Error adding medicine.");
+      console.error("Error adding medicine:", error);
+      setMessage("Error adding medicine: " + error.message);
+    
     }
   };
 
@@ -586,6 +613,10 @@ const focusInput = (rowIndex, columnIndex) => {
               <th>Name</th>
               <th>Salt</th>
               <th>Quantity</th>
+              <th>Strip Size</th>
+              <th>Total Qty (Pieces)</th>
+              <th>Loose Qty</th>
+              <th>Price Loose Pieces</th>
               <th>Exp</th>
               <th>Scheme</th>
               <th>MRP</th>
@@ -662,21 +693,86 @@ const focusInput = (rowIndex, columnIndex) => {
                     medicine.salt
                   )}
                 </td>
+
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
                     ref={(el) => (inputRefs.current[`${index}-5`] = el)}
                     type="number"
                     value={tempData.quantity || ""}
-                    onChange={(e) =>
-                    setTempData({ ...tempData, quantity: e.target.value })
-              }
+                    onChange={(e) =>{
+                      const quantity = parseInt(e.target.value) || 0;
+                    setTempData({ ...tempData, quantity })
+              }}
               autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
             />
             ) : (
               medicine.quantity
             )}
             </td>
+
+            <td>
+                  {editMedicine === medicine.id ? (
+                    <input
+                    ref={(el) => (inputRefs.current[`${index}-5`] = el)}
+                    type="number"
+                    value={tempData.stripsize || ""}
+                    onChange={(e) =>{
+                      const stripsize = parseInt(e.target.value) || 0;
+                    setTempData({ ...tempData, stripsize })
+                  }}
+              autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
+            />
+            ) : (
+              medicine.stripsize
+            )}
+            </td>
+
+            <td>{medicine.totalPieces || 0}</td>
+
+            
+
+            <td>
+              {/* loose qty */}
+              {editMedicine === medicine.id ? (
+                    <input
+                    ref={(el) => (inputRefs.current[`${index}-5`] = el)}
+                    type="number"
+                    value={tempData.lossQuantity ?? 0}  // ✅ Ensures default is 0
+                    onChange={(e) =>{
+                      const lossQuantity = parseInt(e.target.value) || 0;
+                    setTempData({ ...tempData, lossQuantity })
+              }}
+              autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
+            />
+            ) : (
+              medicine.lossQuantity ?? 0 // ✅ Ensures display is 0 if undefined
+            )}
+            </td>
+          
+
+            <td>
+                  {editMedicine === medicine.id ? (
+                    <input
+                    ref={(el) => (inputRefs.current[`${index}-5`] = el)}
+                    type="number"
+                    value={tempData.priceloosepiece || ""}
+                    onChange={(e) =>{
+                      const priceloosepiece = parseInt(e.target.value) || 0;
+                    setTempData({ ...tempData, priceloosepiece })
+                  }}
+              autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
+            />
+            ) : (
+              medicine.priceloosepiece
+            )}
+            </td>
+
+
+
+           
+
+ 
 
                 <td>
                   {editMedicine === medicine.id ? (
@@ -740,17 +836,25 @@ const focusInput = (rowIndex, columnIndex) => {
                 </td>
                 
                 <td>
-                  {editMedicine === medicine.id ? (
+                {/* allows users to edit the discount field of a medicine when editMedicine matches the medicine.id */}
+                {/* If editMedicine equals medicine.id, the input field is shown.
+                Otherwise, it just displays the discount value (medicine.discount). */}
+                  
+                  {editMedicine === medicine.id ? (  
                     <input
+                    // ref for Keyboard Navigation
                     ref={(el) => (inputRefs.current[`${index}-10`] = el)}
                       type="number"
                       value={tempData.discount || ""}
                       onChange={(e) => {
+                        // When the user types a discount, it updates tempData.discount.
                         const discount = parseFloat(e.target.value);
+                        // It then calculates the new selling price using calculateSellingPrice().
                         const sellingPrice = calculateSellingPrice(
                           tempData.mrp,
                           discount
                         );
+                        // setTempData({...tempData, discount, sellingPrice}) updates the temporary state.
                         setTempData({ ...tempData, discount, sellingPrice });
                       }}
                       autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys

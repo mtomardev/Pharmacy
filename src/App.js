@@ -57,7 +57,14 @@ function App() {
         <Route path="/customer/:customerId" element={<CustomerPurchaseHistory />} />
 
         {/* This will ensure the page loads when clicking View on the Invoice Details Page. */}
-        <Route path="/customer/:customerId/invoice/:invoiceId" element={<InvoiceDetails />} />
+        {/* <Route path="/sales/:customerId/:invoiceId" element={<InvoiceDetails />} /> */}
+        <Route path="/customer/:customerId/sales/:invoiceId" element={<InvoiceDetails />} />
+        
+         {/* Route for Walk-in Customer Purchase History by invoiceId */}
+        <Route path="/sales/:invoiceId" element={<CustomerPurchaseHistory />} />
+
+      {/* Route for Walk-in Customer Invoice Details */}
+       <Route path="/sales/:invoiceId/details" element={<InvoiceDetails />} />
 
         {/* Route for CustomerDetails */}
         <Route path="/distributors" element={user ? <Distributors/> : <EmailPasswordAuth />} />

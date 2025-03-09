@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { collection, getDocs, getDoc, addDoc, query, where, doc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth"; // Import Firebase Auth
@@ -5,9 +6,9 @@ import { db } from "../firebase"; // Import Firestore instance
 import "./InvoicePage.css"; // Custom styles for the layout
 import saveInvoiceToFirestore from "./saveInvoiceToFirestore";
 import "./General.css";
+import { useNavigate } from "react-router-dom";
 
 
-// import { doc, updateDoc } from "firebase/firestore"; // Import doc and updateDoc
 
 const InvoicePage = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -28,6 +29,7 @@ const InvoicePage = () => {
   const [customerHistory, setCustomerHistory] = useState([]);
   const [lastInvoice, setLastInvoice] = useState(null);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const navigate = useNavigate();
 
  
   
@@ -42,11 +44,17 @@ const InvoicePage = () => {
         const medicinesData = querySnapshot.docs.map((doc) => ({
           id: doc.id,
           ...doc.data(),
+          costPrice: doc.data().costPrice ?? 0, // ✅ Ensure costPrice is always present
+          priceloosepiece: doc.data().priceloosepiece ?? 0, // ✅ Explicitly set priceloosepiece
         }));
+         // ✅ Debugging log: Check if "priceloosepiece" exists in the fetched data
+         console.log("deebug Fetched Medicines from Firebase:", medicinesData);
+
         setMedicines(
           medicinesData.map(medicine => ({
             ...medicine,
-            quantity: Number(medicine.quantity) || 0 // Convert to number and handle potential undefined values
+            quantity: Number(medicine.quantity) || 0, // Convert to number and handle potential undefined values
+            priceloosepiece: Number(medicine.priceloosepiece) || 0 // ✅ Ensure it's always a number
           }))
         );         // Store all medicines, including salt
       } catch (error) {
@@ -55,9 +63,13 @@ const InvoicePage = () => {
         setLoading(false);
       }
     };
+    
 
     fetchMedicines();
+    
   }, []);
+
+
 
   // Fetch logged-in user's name (you, the user)
   useEffect(() => {
@@ -85,14 +97,12 @@ const InvoicePage = () => {
 
   
 
-  const addToInvoice = (medicine) => {  // 🔵 Removed 'async' since Firestore update is no longer here
+  const addToInvoice = (medicine) => {  
     if (medicine.quantity <= 0) {
       alert("This medicine is out of stock.");
       return;
     }
     console.log("Adding Medicine:", medicine); // Debugging log
-
-    // 🔵 Firestore update REMOVED (we now update Firebase only when the invoice is saved)
 
     // 🔵 Check if the medicine is already in the selected list
     const existingMedicine = selectedMedicines.find((m) => m.id === medicine.id);
@@ -108,11 +118,15 @@ const InvoicePage = () => {
       updatedList = [
         ...selectedMedicines,
         {
+          ...medicine,  // ✅ Ensure all fields are copied (including `priceloosepiece`)
           id: medicine.id,
           name: medicine.name,
-          quantity: 1,
+          quantity: 0,
+          lossQuantity: 0,
           sellingPrice: medicine.sellingPrice,
           mrp: medicine.mrp || 0, // Ensure MRP is included
+          costPrice: medicine.costPrice ?? 0, // ✅ Ensure costPrice is always set
+          totalSellingPrice: 0, // Initialize selling price
         },
       ];
     }
@@ -122,6 +136,7 @@ const InvoicePage = () => {
     setSearchTerm("");
     setFilteredMedicines([]);
     setHighlightedIndex(-1);
+    calculateTotal(updatedList); // 🔵 Recalculate when adding a medicine
 };
 
   
@@ -139,30 +154,75 @@ const removeFromInvoice = (medicineId) => {
 
     
 
-  // Update the total price
+  
+
   const calculateTotal = (medicinesList) => {
     const total = medicinesList.reduce(
-      (sum, medicine) => sum + medicine.sellingPrice * medicine.quantity,
+      (sum, medicine) => sum + (medicine.totalSellingPrice || 0),
       0
     );
+    console.log("Updated Total Price:", total); // Debugging
     setTotalPrice(total);
   };
-
+  
  
 
   
-const updateQuantity = (id, newQuantity) => {
-  if (isNaN(newQuantity) || newQuantity <= 0) return;
 
-  const updatedList = selectedMedicines.map(m =>
-    m.id === id ? { ...m, quantity: newQuantity } : m
-  );
 
-  setSelectedMedicines(updatedList);
-  calculateTotal(updatedList);
+console.log("entering in updateQuantity")
 
-  // ✅ Firestore and inventory updates only when invoice is saved (correct)
+
+const updateQuantity = (medicineId, quantity, lossQuantity) => {
+  console.log("entered in updateQuantity");
+
+  setSelectedMedicines((prevMedicines) => {
+    const updatedMedicines = prevMedicines.map((medicine) => {
+      if (medicine.id === medicineId) {
+        console.log("Updating Medicine:", medicine); // ✅ Debugging
+        console.log("Selling Price (Strip):", medicine.sellingPrice);
+        console.log("deebug Loose Price:", medicine.priceloosepiece); // ✅ Check if this is still 0 here
+
+        const stripPrice = medicine.sellingPrice || 0; // Price per full strip
+        const loosePrice = medicine.priceloosepiece || 0; // Price per loose piece
+        console.log("stripPrice", stripPrice);
+        console.log("loosePrice", loosePrice);
+
+        let totalSellingPrice = 0;
+
+        // ✅ Scenario 1: Buying Full Strip Only
+        if (quantity > 0 && lossQuantity === 0) {
+          totalSellingPrice = quantity * stripPrice;
+        }
+
+        // ✅ Scenario 2: Buying Loose Pieces Only
+        if (quantity === 0 && lossQuantity > 0) {
+          totalSellingPrice = lossQuantity * loosePrice;
+        }
+
+        // ✅ Scenario 3: Buying Both (Full Strip + Loose Pieces)
+        if (quantity > 0 && lossQuantity > 0) {
+          totalSellingPrice = (quantity * stripPrice) + (lossQuantity * loosePrice);
+        }
+
+        return {
+          ...medicine,
+          quantity: quantity || 0, // Ensure valid number
+          lossQuantity: lossQuantity || 0, // Ensure valid number
+          totalSellingPrice,
+        };
+      }
+      return medicine;
+    });
+
+    // ✅ **Fix: Calculate total price after updating quantities**
+    calculateTotal(updatedMedicines);
+    
+    return updatedMedicines;
+  });
 };
+
+
 
   
   
@@ -236,101 +296,6 @@ const updateQuantity = (id, newQuantity) => {
   
   console.log("Final selected medicines before saving:", selectedMedicines);
 
-//   const handleSaveInvoice = async () => {
-//     if (selectedMedicines.length === 0) {
-//         alert("No medicines selected for the invoice.");
-//         return;
-//     }
-
-//     console.log("Final selected medicines before saving:", selectedMedicines);
-//     console.log("Type of selectedMedicines:", typeof selectedMedicines);
-//     console.log("Is selectedMedicines an array?", Array.isArray(selectedMedicines));
-
-//     try {
-//         const invoiceData = await saveInvoiceToFirestore(
-//             customerId,
-//             customerName,
-//             customerPhone,
-//             selectedMedicines, // Ensure this is an array
-//             totalPrice
-//         );
-
-//         if (invoiceData) {
-//             setLastInvoice(invoiceData);
-//         }
-//     } catch (error) {
-//         console.error("Error saving invoice:", error);
-//     }
-// };
-
-// const handleSaveInvoice = async () => {
-
-//   console.log("handleSaveInvoice function started!"); // ✅ Add this
-
-//   if (selectedMedicines.length === 0) {
-//       alert("No medicines selected for the invoice.");
-//       return;
-//   }
-
-//   console.log("Final selected medicines before saving:", selectedMedicines);
-//   console.log("Type of selectedMedicines:", typeof selectedMedicines);
-//   console.log("Is selectedMedicines an array?", Array.isArray(selectedMedicines));
-//   console.log("🚀 Function started: Processing Invoice and Stock Update");
-//   try {
-//       // Save the invoice first
-//       const invoiceData = await saveInvoiceToFirestore(
-//           customerId,
-//           customerName,
-//           customerPhone,
-//           selectedMedicines, // Ensure this is an array
-//           totalPrice
-//       );
-
-//       if (invoiceData) {
-//           // After saving the invoice, update the quantity of the medicines in Firestore
-//           const batch = writeBatch(db);
-
-//           selectedMedicines.forEach(medicine => {
-//               if (medicine.id) {
-//                   const medicineRef = doc(db, "medicines", medicine.id);
-             
-//                     // ✅ Ensure quantityInStock is fetched correctly from Firestore
-//           const currentStock = Number(medicine.quantityInStock) || 0;
-//           const soldQuantity = Number(medicine.quantity) || 0;
-             
-             
-//                   // Subtract the sold quantity from available stock
-//                   const newQuantity = Math.max(currentStock - soldQuantity, 0);
-
-//                   console.log(`Updating stock for ${medicine.name} (ID: ${medicine.id})`);
-//           console.log(`Current Stock: ${currentStock}, Sold: ${soldQuantity}, New Stock: ${newQuantity}`);
-
-          
-//            // ✅ Correct Firestore field update
-//            batch.update(medicineRef, { quantityInStock: newQuantity });
-//               }
-//           });
-
-//           // Commit the batch operation to update Firestore
-//           // await batch.commit();
-//           console.log("🛠️ Preparing to commit Firestore batch update...");
-//           try {
-//             await batch.commit();
-//             console.log("✅ Firestore stock update committed successfully!");
-//           } catch (error) {
-//             console.error("❌ Firestore update error:", error);
-//           }
-//           // Set the last invoice after saving and updating stock
-//           // setLastInvoice(invoiceData);
-//            // ✅ Reset invoice form after successful save
-//       setSelectedMedicines([]);
-//       setTotalPrice(0);
-//       setLastInvoice(invoiceData);
-//       }
-//   } catch (error) {
-//       console.error("Error saving invoice:", error);
-//   }
-// };
 
 const handleSaveInvoice = async () => {
   console.log("handleSaveInvoice function started!");
@@ -340,18 +305,52 @@ const handleSaveInvoice = async () => {
       return;
   }
 
-  console.log("Final selected medicines before saving:", selectedMedicines);
+ // 🔵 Ensure each medicine has costPrice, quantity, lossQuantity, and totalSellingPrice before saving
+   const medicinesWithDetails = selectedMedicines.map((medicine) => ({
+    ...medicine,
+    id: medicine.id,  // Ensure the ID is explicitly saved
+    name: medicine.name, 
+    quantity: medicine.quantity ?? 0,  // ✅ Save strip quantity
+    lossQuantity: medicine.lossQuantity ?? 0,  // ✅ Save loose pieces quantity
+    costPrice: medicine.costPrice ?? 0,  // ✅ Ensure costPrice is saved
+    sellingPrice: medicine.sellingPrice ?? 0,  // ✅ Save selling price per strip
+    totalSellingPrice: medicine.totalSellingPrice ?? 0,  // ✅ Save total price of this medicine
+    mrp: medicine.mrp ?? 0,  // ✅ Save MRP
+}));
+
+  console.log("Final selected medicines before saving:", medicinesWithDetails);
 
   try {
-      // Step 1: Save invoice in Firestore
+
+    
+ 
+  // 🟢 If no phone number is provided, assign default values
+  const assignedCustomerName = customerPhone ? customerName : "Walk-in Customers";
+  const assignedCustomerPhone = customerPhone || "N/A"; // Placeholder if no phone
+  let assignedCustomerId = customerId; // Use existing customer ID if available
+
+   // If no phone is provided, create a new "Walk-in Customer" entry
+   if (!customerPhone) {
+    
+    // Save walk-in customer to Firestore and get an ID
+    assignedCustomerId = await saveCustomerToFirestore(assignedCustomerName, assignedCustomerPhone);
+  }
+
+
+  
+    // Step 1: Save invoice in Firestore
       const invoiceData = await saveInvoiceToFirestore(
           customerId,
-          customerName,
-          customerPhone,
-          selectedMedicines,
-          totalPrice
+          assignedCustomerName,
+          assignedCustomerPhone,
+          medicinesWithDetails,  // ✅ Now includes quantity & lossQuantity
+          totalPrice,
+          // medicinesWithCostPrice
+          { createdAt: new Date().toISOString() } // ✅ Add timestamp
       );
+      
       console.log("✅ Invoice saved successfully:", invoiceData);
+
       if (invoiceData) {
           console.log("✅ Invoice saved successfully:", invoiceData);
           
@@ -369,26 +368,63 @@ const handleSaveInvoice = async () => {
   }
 };
 
+// const saveCustomerToFirestore = async (customerName, customerPhone) => {
+  
+//   try {
+//     const newCustomerRef = await addDoc(collection(db, "customers"), {
+//       name: customerName,
+//       phone: customerPhone,
+//       createdAt: new Date().toISOString(),
+//     });
+//     return newCustomerRef.id; // Return the new customer ID
+//   } catch (error) {
+//     console.error("Error saving customer:", error);
+//     return null;
+//   }
+// };
+
+const saveCustomerToFirestore = async (customerName, customerPhone) => {
+  try {
+    // Prevent saving "Walk-in Customers" in the customers collection
+    if (customerName === "Walk-in Customers") {
+      return null; // Just return null, don't create an entry
+    }
+
+    // Create a new customer for all others
+    const newCustomerRef = await addDoc(collection(db, "customers"), {
+      name: customerName,
+      phone: customerPhone,
+      createdAt: new Date().toISOString(),
+    });
+
+    return newCustomerRef.id; // Return the new customer ID
+  } catch (error) {
+    console.error("Error saving customer:", error);
+    return null;
+  }
+};
+
+
+
 
 const updateStockAfterInvoice = async (invoiceId) => {
   console.log(`🚀 Updating stock for invoice: ${invoiceId}`);
 
   try {
       const invoiceRef = doc(db, "sales", invoiceId);    
-
       const invoiceSnap = await getDoc(invoiceRef);
 
       if (!invoiceSnap.exists()) {
-          console.log("❌ Invoice invoiceSnap", invoiceSnap);
+          console.log("❌ Invoice not found!");
           return;
       }
 
       const invoiceData = invoiceSnap.data();
       const medicinesSold = invoiceData.medicines || [];
 
-      console.log("📦 Medicines from invoice:",invoiceData, medicinesSold);
+      console.log("📦 Medicines from invoice:", medicinesSold);
 
-      // Step 3: Fetch & update stock
+      // Step 3: Fetch & update stock in batches
       const batch = writeBatch(db);
 
       for (const medicine of medicinesSold) {
@@ -397,29 +433,58 @@ const updateStockAfterInvoice = async (invoiceId) => {
           const medicineRef = doc(db, "medicines", medicine.id);
           const medicineSnap = await getDoc(medicineRef);
 
-          console.log("medicine snap ",medicineRef, medicineSnap.data())
           if (!medicineSnap.exists()) {
               console.warn(`⚠️ Medicine not found: ${medicine.name}`);
               continue;
           }
-          const currentStock = Number(medicineSnap.data().quantity) || 0;
-          const soldQuantity = Number(medicine.quantity) || 0;
 
-          // Ensure stock doesn't go negative
-          const newQuantity = Math.max(currentStock - soldQuantity, 0);
+          const medicineData = medicineSnap.data();
+          const currentQuantity = Number(medicineData.quantity) || 0;  // Full strips
+          const currentLossQuantity = Number(medicineData.lossQuantity) || 0;  // Loose pieces
+          const stripSize = Number(medicineData.stripsize) || 1; // Number of pieces per strip
+          
+          const totalPieces = currentQuantity * stripSize + currentLossQuantity; // Total available pieces
 
-          console.log(`🔄 Updating stock for ${medicine.name}: ${currentStock} → ${newQuantity}`);
+          const soldStrips = Number(medicine.quantity) || 0;
+          const soldLoosePieces = Number(medicine.lossQuantity) || 0;
 
-          batch.update(medicineRef, { quantity: newQuantity });
+          console.log(`🔹 ${medicine.name} - Stock Before: Strips(${currentQuantity}), Loose(${currentLossQuantity}), TotalPieces(${totalPieces})`);
+          console.log(`🛒 Sold: Strips(${soldStrips}), Loose(${soldLoosePieces})`);
+
+          // **Step 1: Reduce total available pieces**
+          let remainingTotalPieces = totalPieces - (soldStrips * stripSize) - soldLoosePieces;
+
+          // **Ensure stock doesn’t go negative**
+          if (remainingTotalPieces < 0) {
+              console.warn(`⚠️ Stock for ${medicine.name} is going negative! Setting to zero.`);
+              remainingTotalPieces = 0;
+          }
+
+          // **Step 2: Calculate new strip and loose piece quantities**
+          const newQuantity = Math.floor(remainingTotalPieces / stripSize);  // Full strips
+          const newLossQuantity = remainingTotalPieces % stripSize;  // Loose pieces
+
+          console.log(`✅ Updating ${medicine.name} - Stock After: Strips(${newQuantity}), Loose(${newLossQuantity}), TotalPieces(${remainingTotalPieces})`);
+
+          // **Step 3: Update Firestore with new stock values**
+          batch.update(medicineRef, {
+              quantity: newQuantity,
+              lossQuantity: newLossQuantity,
+              totalPieces: remainingTotalPieces,
+          });
       }
 
       await batch.commit();
       console.log("✅ Stock update committed successfully!");
 
+      
+
   } catch (error) {
       console.log("❌ Error updating stock:", error);
   }
 };
+
+
 
 
 
@@ -448,7 +513,12 @@ const updateStockAfterInvoice = async (invoiceId) => {
   };
 
   const handleViewHistory = () => {
-    fetchCustomerHistory(customerId, setCustomerHistory);
+    // fetchCustomerHistory(customerId, setCustomerHistory);
+    if (!customerId) {
+      alert("No customer selected.");
+      return;
+    }
+    navigate(`/customer/${customerId}`); // Navigate to history page
   };
   
   return (
@@ -617,10 +687,11 @@ const updateStockAfterInvoice = async (invoiceId) => {
             <thead>
               <tr>
                 <th>S.No</th>
-                <th>Qty</th>
+                <th>Strip Qty</th>
+                <th>Loose Qty</th>
                 <th>Name</th>
                 <th>MRP</th>
-                <th>Selling Price</th>
+                <th>Selling Price (Total)</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -628,20 +699,37 @@ const updateStockAfterInvoice = async (invoiceId) => {
               {selectedMedicines.map((medicine, index) => (
                 <tr key={medicine.id}>
                   <td>{index + 1}</td>
+
+                   {/* Strip Quantity Input */}
+                  <td>
+                     <input
+                        type="number"
+                        value={medicine.quantity}
+                        onChange={(e) =>
+                          updateQuantity(medicine.id, parseInt(e.target.value, 10) || 0, medicine.lossQuantity) // Call updateQuantity with the new quantity
+                  }
+                />
+                  </td>
+                 
+                   {/* Loose Quantity Input */}
                   <td>
                     
                      <input
-    type="number"
-    value={medicine.quantity}
-    min="1"
-    onChange={(e) =>
-      updateQuantity(medicine.id, parseInt(e.target.value, 10)) // Call updateQuantity with the new quantity
-    }
-  />
+                        type="number"
+                        value={medicine.lossQuantity}
+                        
+                        onChange={(e) =>
+                          updateQuantity(medicine.id,medicine.quantity, parseInt(e.target.value, 10) || 0) // Call updateQuantity with the new quantity
+                  }
+                />
                   </td>
+
                   <td>{medicine.name}</td>
                   <td>₹{medicine.mrp}</td>
-                  <td>₹{medicine.sellingPrice}</td>
+
+                
+                   {/* Display Corrected Total Selling Price */}
+                  <td>{medicine.totalSellingPrice}</td>
                   <td>
                   <button
                       onClick={() => removeFromInvoice(medicine.id)} // Use the removeFromInvoice function
