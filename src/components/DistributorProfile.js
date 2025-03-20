@@ -1,3 +1,5 @@
+
+
 import React, { useEffect, useState } from "react";
 import { doc, getDoc, updateDoc, deleteDoc, collection, addDoc, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
@@ -15,7 +17,10 @@ const DistributorProfile = () => {
   const [editIndex, setEditIndex] = useState(null);
   const [editedPurchase, setEditedPurchase] = useState({});
   const [deletePurchaseId, setDeletePurchaseId] = useState(null);
-
+  const [selectedMonth, setSelectedMonth] = useState("");
+  const [selectedYear, setSelectedYear] = useState("");
+  const [availableYears, setAvailableYears] = useState([]);
+  
   useEffect(() => {
     fetchDistributor();
     fetchPurchases();
@@ -30,11 +35,43 @@ const DistributorProfile = () => {
     }
   };
 
+  
+
   const fetchPurchases = async () => {
     const querySnapshot = await getDocs(collection(db, `distributors/${id}/purchases`));
     const purchaseData = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    setPurchases(purchaseData);
+  
+    // Sorting purchases by billDate in descending order
+    purchaseData.sort((a, b) => new Date(b.billDate) - new Date(a.billDate));
+  
+     // Extract unique years from the purchases
+     const years = [...new Set(purchaseData.map((purchase) => new Date(purchase.billDate).getFullYear()))];
+     setAvailableYears(years);
+
+
+
+    // Filter by selected month and year
+    const filteredPurchases = purchaseData.filter((purchase) => {
+      const purchaseDate = new Date(purchase.billDate);
+      const purchaseMonth = String(purchaseDate.getMonth() + 1).padStart(2, '0');
+      const purchaseYear = purchaseDate.getFullYear().toString();
+  
+      const matchesMonth = selectedMonth ? purchaseMonth === selectedMonth : true;
+      const matchesYear = selectedYear ? purchaseYear === selectedYear : true;
+  
+      return matchesMonth && matchesYear;
+    });
+  
+    // Set the state with the filtered purchases
+    setPurchases(filteredPurchases);
   };
+  
+
+  useEffect(() => {
+    fetchPurchases();
+  }, [selectedMonth, selectedYear]);
+  
+  
 
   const handleEditDistributor = () => setEditMode(true);
 
@@ -81,6 +118,14 @@ const DistributorProfile = () => {
     }
   };
 
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`; // Format as 'DD/MM/YYYY'
+  };
+
   return (
     <div className="container">
       {distributor ? (
@@ -125,6 +170,39 @@ const DistributorProfile = () => {
         <input type="number" placeholder="Final Price" value={newPurchase.finalPrice} onChange={(e) => setNewPurchase({ ...newPurchase, finalPrice: e.target.value })} />
         <button type="submit">Add Purchase</button>
       </form>
+      
+       {/* Filter by Month */}
+      <div>
+  <label>Filter by Month: </label>
+  <select value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)}>
+    <option value="">All Months</option>
+    <option value="01">January</option>
+    <option value="02">February</option>
+    <option value="03">March</option>
+    <option value="04">April</option>
+    <option value="05">May</option>
+    <option value="06">June</option>
+    <option value="07">July</option>
+    <option value="08">August</option>
+    <option value="09">September</option>
+    <option value="10">October</option>
+    <option value="11">November</option>
+    <option value="12">December</option>
+  </select>
+</div>
+
+{/* Filter by Year */}
+    <div>
+        <label>Filter by Year: </label>
+        <select value={selectedYear} onChange={(e) => setSelectedYear(e.target.value)}>
+          <option value="">All Years</option>
+          {availableYears.map((year) => (
+            <option key={year} value={year}>
+              {year}
+            </option>
+          ))}
+        </select>
+      </div>
 
       <table className="styled-table">
         <thead>
@@ -141,7 +219,8 @@ const DistributorProfile = () => {
           {purchases.map((purchase, index) => (
             <tr key={purchase.id}>
               <td>{editIndex === index ? <input type="text" value={editedPurchase.billNumber} onChange={(e) => setEditedPurchase({ ...editedPurchase, billNumber: e.target.value })} /> : purchase.billNumber}</td>
-              <td>{editIndex === index ? <input type="date" value={editedPurchase.billDate} onChange={(e) => setEditedPurchase({ ...editedPurchase, billDate: e.target.value })} /> : purchase.billDate}</td>
+              <td>{editIndex === index ? <input type="date" value={editedPurchase.billDate} onChange={(e) => setEditedPurchase({ ...editedPurchase, billDate: e.target.value })} /> : formatDate(purchase.billDate)}</td>
+
               <td>{editIndex === index ? <input type="number" value={editedPurchase.totalBill} onChange={(e) => setEditedPurchase({ ...editedPurchase, totalBill: e.target.value })} /> : purchase.totalBill}</td>
               <td>{editIndex === index ? <textarea value={editedPurchase.notes} onChange={(e) => setEditedPurchase({ ...editedPurchase, notes: e.target.value })} /> : purchase.notes}</td>
               <td>{editIndex === index ? <input type="number" value={editedPurchase.finalPrice} onChange={(e) => setEditedPurchase({ ...editedPurchase, finalPrice: e.target.value })} /> : purchase.finalPrice}</td>
@@ -165,3 +244,5 @@ const DistributorProfile = () => {
 };
 
 export default DistributorProfile;
+
+

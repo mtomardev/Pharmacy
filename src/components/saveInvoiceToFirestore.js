@@ -6,7 +6,11 @@ const saveInvoiceToFirestore = async (
   customerName,
   customerPhone,
   selectedMedicines,
-  totalPrice
+  mrpTotal, // ✅ MRP Total Amount
+  totalSaving, // ✅ Saving Total Savings
+  totalPrice, // ✅ Grand Total (already included)
+  
+
 ) => {
   if (!Array.isArray(selectedMedicines)) {
     console.error("Expected an array but got:", selectedMedicines);
@@ -33,7 +37,10 @@ const saveInvoiceToFirestore = async (
     sellingPrice: medicine.sellingPrice,
     mrp: medicine.mrp,
     costPrice: medicine.costPrice, // ✅ Add this line
-    priceloosepiece: medicine.priceloosepiece
+    costPriceLossepiece: medicine.costPriceLossepiece,
+    priceloosepiece: medicine.priceloosepiece,
+    gst: medicine.gst,
+    
     
   }));
 
@@ -46,6 +53,8 @@ const saveInvoiceToFirestore = async (
     customerName,
     customerPhone,
     medicines: medicinesWithCost,
+    mrpTotal,
+    totalSaving: parseFloat(totalSaving.toFixed(2)), // ✅ Round to 2 decimals,
     totalPrice,
     timestamp: new Date(),
   };

@@ -15,7 +15,9 @@ const InvoicePage = () => {
   const [medicines, setMedicines] = useState([]); // All medicines from Firestore
   const [filteredMedicines, setFilteredMedicines] = useState([]); // Medicines matching the search
   const [selectedMedicines, setSelectedMedicines] = useState([]);
-  const [totalPrice, setTotalPrice] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0); //grandTotal
+  const [mrpTotal, setMrpTotal] = useState(0); //mrpTotal
+  const [totalSaving, setTotalSavings] = useState(0); //Total saving
   const [customerPhone, setCustomerPhone] = useState(""); // Customer's phone number
   const [customerName, setCustomerName] = useState(""); // Customer's name
   const [customerId, setCustomerId] = useState(null); // Customer ID to link invoice
@@ -45,6 +47,7 @@ const InvoicePage = () => {
           id: doc.id,
           ...doc.data(),
           costPrice: doc.data().costPrice ?? 0, // ✅ Ensure costPrice is always present
+          costPriceLossepiece: doc.data().costPriceLossepiece ?? 0, // ✅ Ensure costPrice is always present
           priceloosepiece: doc.data().priceloosepiece ?? 0, // ✅ Explicitly set priceloosepiece
         }));
          // ✅ Debugging log: Check if "priceloosepiece" exists in the fetched data
@@ -126,6 +129,7 @@ const InvoicePage = () => {
           sellingPrice: medicine.sellingPrice,
           mrp: medicine.mrp || 0, // Ensure MRP is included
           costPrice: medicine.costPrice ?? 0, // ✅ Ensure costPrice is always set
+          costPriceLossepiece: medicine.costPriceLossepiece ?? 0,
           totalSellingPrice: 0, // Initialize selling price
         },
       ];
@@ -154,77 +158,37 @@ const removeFromInvoice = (medicineId) => {
 
     
 
-  
+
 
   const calculateTotal = (medicinesList) => {
-    const total = medicinesList.reduce(
+    let totalMRP = 0;
+  let totalSavings = 0;
+  
+  let grandTotal = medicinesList.reduce(
       (sum, medicine) => sum + (medicine.totalSellingPrice || 0),
       0
     );
-    console.log("Updated Total Price:", total); // Debugging
-    setTotalPrice(total);
-  };
+
+    medicinesList.forEach((medicine) => {
+      const stripQty = medicine.quantity || 0;  // Strip Quantity
+      const looseQty = medicine.lossQuantity || 0;  // Loose Quantity
   
- 
+      // Calculate Total Amount
+      totalMRP += (medicine.mrp * stripQty) + (medicine.priceloosepiece * looseQty);
 
-  
-
-
-console.log("entering in updateQuantity")
-
-
-const updateQuantity = (medicineId, quantity, lossQuantity) => {
-  console.log("entered in updateQuantity");
-
-  setSelectedMedicines((prevMedicines) => {
-    const updatedMedicines = prevMedicines.map((medicine) => {
-      if (medicine.id === medicineId) {
-        console.log("Updating Medicine:", medicine); // ✅ Debugging
-        console.log("Selling Price (Strip):", medicine.sellingPrice);
-        console.log("deebug Loose Price:", medicine.priceloosepiece); // ✅ Check if this is still 0 here
-
-        const stripPrice = medicine.sellingPrice || 0; // Price per full strip
-        const loosePrice = medicine.priceloosepiece || 0; // Price per loose piece
-        console.log("stripPrice", stripPrice);
-        console.log("loosePrice", loosePrice);
-
-        let totalSellingPrice = 0;
-
-        // ✅ Scenario 1: Buying Full Strip Only
-        if (quantity > 0 && lossQuantity === 0) {
-          totalSellingPrice = quantity * stripPrice;
-        }
-
-        // ✅ Scenario 2: Buying Loose Pieces Only
-        if (quantity === 0 && lossQuantity > 0) {
-          totalSellingPrice = lossQuantity * loosePrice;
-        }
-
-        // ✅ Scenario 3: Buying Both (Full Strip + Loose Pieces)
-        if (quantity > 0 && lossQuantity > 0) {
-          totalSellingPrice = (quantity * stripPrice) + (lossQuantity * loosePrice);
-        }
-
-        return {
-          ...medicine,
-          quantity: quantity || 0, // Ensure valid number
-          lossQuantity: lossQuantity || 0, // Ensure valid number
-          totalSellingPrice,
-        };
-      }
-      return medicine;
-    });
-
-    // ✅ **Fix: Calculate total price after updating quantities**
-    calculateTotal(updatedMedicines);
-    
-    return updatedMedicines;
+       // Calculate Savings
+    totalSavings += (medicine.mrp * stripQty) - (medicine.sellingPrice * stripQty);
   });
-};
+
+    console.log("Updated Total Amount:", totalMRP);
+  console.log("Updated Savings:", totalSavings);
+  console.log("Updated Grand Total:", grandTotal);
 
 
-
-  
+  setMrpTotal(totalMRP);
+  setTotalSavings(totalSavings);
+    setTotalPrice(grandTotal);
+  };
   
 
 
@@ -297,6 +261,67 @@ const updateQuantity = (medicineId, quantity, lossQuantity) => {
   console.log("Final selected medicines before saving:", selectedMedicines);
 
 
+
+  console.log("entering in updateQuantity")
+
+
+  const updateQuantity = (medicineId, quantity, lossQuantity) => {
+    console.log("entered in updateQuantity");
+  
+    setSelectedMedicines((prevMedicines) => {
+      const updatedMedicines = prevMedicines.map((medicine) => {
+        if (medicine.id === medicineId) {
+          console.log("Updating Medicine:", medicine); // ✅ Debugging
+          console.log("Selling Price (Strip):", medicine.sellingPrice);
+          console.log("deebug Loose Price:", medicine.priceloosepiece); // ✅ Check if this is still 0 here
+  
+          const stripPrice = medicine.sellingPrice || 0; // Price per full strip
+          const loosePrice = medicine.priceloosepiece || 0; // Price per loose piece
+          console.log("stripPrice", stripPrice);
+          console.log("loosePrice", loosePrice);
+  
+          let totalSellingPrice = 0;
+  
+          // ✅ Scenario 1: Buying Full Strip Only
+          if (quantity > 0 && lossQuantity === 0) {
+            totalSellingPrice =  quantity * stripPrice;
+          }
+  
+          // ✅ Scenario 2: Buying Loose Pieces Only
+          if (quantity === 0 && lossQuantity > 0) {
+            // totalSellingPrice = lossQuantity * loosePrice;
+            totalSellingPrice = parseFloat((lossQuantity * loosePrice).toFixed(2));
+  
+          }
+  
+          // ✅ Scenario 3: Buying Both (Full Strip + Loose Pieces)
+          if (quantity > 0 && lossQuantity > 0) {
+            totalSellingPrice = parseFloat(((quantity * stripPrice) + (lossQuantity * loosePrice)).toFixed(2));
+  
+          }
+  
+          return {
+            ...medicine,
+            quantity: quantity || 0, // Ensure valid number
+            lossQuantity: lossQuantity || 0, // Ensure valid number
+            totalSellingPrice,
+          };
+        }
+        return medicine;
+      });
+  
+      // ✅ **Fix: Calculate total price after updating quantities**
+      calculateTotal(updatedMedicines);
+      
+      return updatedMedicines;
+    });
+  };
+
+
+
+
+
+
 const handleSaveInvoice = async () => {
   console.log("handleSaveInvoice function started!");
 
@@ -313,6 +338,7 @@ const handleSaveInvoice = async () => {
     quantity: medicine.quantity ?? 0,  // ✅ Save strip quantity
     lossQuantity: medicine.lossQuantity ?? 0,  // ✅ Save loose pieces quantity
     costPrice: medicine.costPrice ?? 0,  // ✅ Ensure costPrice is saved
+    costPriceLossepiece: medicine.costPriceLossepiece ?? 0,  // ✅ Ensure costPriceLossepiece is saved
     sellingPrice: medicine.sellingPrice ?? 0,  // ✅ Save selling price per strip
     totalSellingPrice: medicine.totalSellingPrice ?? 0,  // ✅ Save total price of this medicine
     mrp: medicine.mrp ?? 0,  // ✅ Save MRP
@@ -344,8 +370,11 @@ const handleSaveInvoice = async () => {
           assignedCustomerName,
           assignedCustomerPhone,
           medicinesWithDetails,  // ✅ Now includes quantity & lossQuantity
-          totalPrice,
-          // medicinesWithCostPrice
+          mrpTotal, // ✅ MRP Total Amount
+          totalSaving, // ✅ Saving Total Savings
+          totalPrice, // ✅ Grand Total (already included)
+
+          
           { createdAt: new Date().toISOString() } // ✅ Add timestamp
       );
       
@@ -359,29 +388,18 @@ const handleSaveInvoice = async () => {
       }
 
       // Reset invoice form
-      setSelectedMedicines([]);
-      setTotalPrice(0);
-      setLastInvoice(invoiceData);
+      // setSelectedMedicines([]);
+      // setTotalPrice(0);
+      setLastInvoice(invoiceData); // Keep the last saved invoice
+setSelectedInvoice(invoiceData); // Store the current invoice
+
 
   } catch (error) {
       console.error("❌ Error saving invoice:", error);
   }
 };
 
-// const saveCustomerToFirestore = async (customerName, customerPhone) => {
-  
-//   try {
-//     const newCustomerRef = await addDoc(collection(db, "customers"), {
-//       name: customerName,
-//       phone: customerPhone,
-//       createdAt: new Date().toISOString(),
-//     });
-//     return newCustomerRef.id; // Return the new customer ID
-//   } catch (error) {
-//     console.error("Error saving customer:", error);
-//     return null;
-//   }
-// };
+
 
 const saveCustomerToFirestore = async (customerName, customerPhone) => {
   try {
@@ -690,8 +708,12 @@ const updateStockAfterInvoice = async (invoiceId) => {
                 <th>Strip Qty</th>
                 <th>Loose Qty</th>
                 <th>Name</th>
-                <th>MRP</th>
-                <th>Selling Price (Total)</th>
+                <th>MRP Strip</th>
+                <th>Price Loose</th>
+                <th>GST %</th>
+                <th>Selling Price Strip</th>
+                <th>Selling Price (Loose)</th>
+                <th>Total</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -726,7 +748,10 @@ const updateStockAfterInvoice = async (invoiceId) => {
 
                   <td>{medicine.name}</td>
                   <td>₹{medicine.mrp}</td>
-
+                  <td>₹{medicine.priceloosepiece}</td>
+                  <td>{medicine.gst}</td>
+                  <td>₹{medicine.sellingPrice}</td>
+                  <td>₹{medicine.sellingPriceLoosePiece}</td>
                 
                    {/* Display Corrected Total Selling Price */}
                   <td>{medicine.totalSellingPrice}</td>
@@ -743,11 +768,16 @@ const updateStockAfterInvoice = async (invoiceId) => {
               ))}
             </tbody>
           </table>
+
+         
+          <div className="total-price">
+            <h5>Total Amount: ₹{mrpTotal}</h5>
+            <h5>Total Saving: ₹{totalSaving.toFixed(2)}</h5>  
+            <h5>Grand Total: ₹{totalPrice}</h5>
+          </div>
           
           {/* Total Price */}
-          <div className="total-price">
-            <h3>Total Price: ₹{totalPrice}</h3>
-          </div>
+
           {/* save */}
           
         </>

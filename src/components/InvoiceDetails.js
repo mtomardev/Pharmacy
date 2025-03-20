@@ -65,8 +65,9 @@ const InvoiceDetails = () => {
         <thead>
           <tr className="bg-gray-200">
             <th className="border p-2">Medicine</th>
-            <th className="border p-2">Quantity</th>
-            <th className="border p-2">Price</th>
+            <th className="border p-2">Strip Qty</th>
+            <th className="border p-2">Loose Qty</th>
+            <th className="border p-2">Selling Price</th>
           </tr>
         </thead>
         <tbody>
@@ -75,6 +76,7 @@ const InvoiceDetails = () => {
               <tr key={index}>
                 <td className="border p-2">{med.name || "N/A"}</td>
                 <td className="border p-2">{med.quantity || "N/A"}</td>
+                <td className="border p-2">{med.lossQuantity || "N/A"}</td>
                 <td className="border p-2">₹{med.sellingPrice || "N/A"}</td>
               </tr>
             ))

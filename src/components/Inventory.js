@@ -289,6 +289,9 @@ const focusInput = (rowIndex, columnIndex) => {
         ...updatedData, // Use the latest tempData
         discount: parseFloat(discount),
         totalPieces: totalPieces, // ✅ Save updated total pieces
+        sellingPriceLoosePiece: parseFloat(updatedData.sellingPriceLoosePiece) || 0,  // ✅ Convert
+        gst: parseFloat(updatedData.gst) || 0,  // ✅ Convert
+        costPriceLossepiece: parseFloat(updatedData.costPriceLossepiece) || 0,  // ✅ Convert
       });
   
       setMessage("Medicine updated successfully!");
@@ -327,6 +330,7 @@ const focusInput = (rowIndex, columnIndex) => {
         scheme: tempData.scheme,
         mrp: parseFloat(tempData.mrp) || 0,
         costPrice: parseFloat(tempData.costPrice) || 0,
+        costPriceLossepiece: parseFloat(tempData.costPriceLossepiece) || 0,
         sellingPrice: parseFloat(tempData.sellingPrice) || 0,
         discount: parseFloat(discount),
         distributor: tempData.distributor,
@@ -337,7 +341,9 @@ const focusInput = (rowIndex, columnIndex) => {
         stripsize: tempData.stripsize || 0,
         totalPieces: totalPieces || 0,
         priceloosepiece: parseFloat(tempData.priceloosepiece) || 0,
+        sellingPriceLoosePiece: parseFloat(tempData.sellingPriceLoosePiece) || 0,  // ✅ Convert to number
         lossQuantity: parseInt(tempData.lossQuantity) || 0, 
+        gst: parseFloat(tempData.gst) || 0,  // ✅ Convert to number
       });
       setMessage("Medicine added successfully!");
       setShowAddForm(false); // Close the Add Medicine form
@@ -616,13 +622,16 @@ const focusInput = (rowIndex, columnIndex) => {
               <th>Strip Size</th>
               <th>Total Qty (Pieces)</th>
               <th>Loose Qty</th>
-              <th>Price Loose Pieces</th>
+              <th>Loose Pieces MRP</th>
               <th>Exp</th>
               <th>Scheme</th>
               <th>MRP</th>
               <th>Cost Price</th>
+              <th>Cost Price Losse piece</th>
+              <th>GST (%)</th>
               <th>Discount (%)</th>
-              <th>Selling Price</th>
+              <th>Selling Price Strip</th>
+              <th>Selling Price Loose Piece</th>
               <th>Distributor</th>
               <th>H1 Drug</th>
               <th>Actions</th>
@@ -758,7 +767,7 @@ const focusInput = (rowIndex, columnIndex) => {
                     type="number"
                     value={tempData.priceloosepiece || ""}
                     onChange={(e) =>{
-                      const priceloosepiece = parseInt(e.target.value) || 0;
+                      const priceloosepiece = parseFloat(e.target.value) || 0;
                     setTempData({ ...tempData, priceloosepiece })
                   }}
               autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
@@ -768,11 +777,6 @@ const focusInput = (rowIndex, columnIndex) => {
             )}
             </td>
 
-
-
-           
-
- 
 
                 <td>
                   {editMedicine === medicine.id ? (
@@ -835,6 +839,42 @@ const focusInput = (rowIndex, columnIndex) => {
                   )}
                 </td>
                 
+
+                <td>
+                  {editMedicine === medicine.id ? (
+                    <input
+                    ref={(el) => (inputRefs.current[`${index}-9`] = el)}
+                      type="number"
+                      value={tempData.costPriceLossepiece || 0}
+                      onChange={(e) =>
+                        setTempData({ ...tempData, costPriceLossepiece: e.target.value })
+                      }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
+                    />
+                  ) : (
+                    medicine.costPriceLossepiece
+                  )}
+                </td>
+                 
+                  {/* GST% */}
+                <td>
+                {editMedicine === medicine.id ? (
+                    <input
+                    ref={(el) => (inputRefs.current[`${index}-9`] = el)}
+                      type="number"
+                      value={tempData.gst || 0}
+                      onChange={(e) =>
+                        setTempData({ ...tempData, gst: e.target.value })
+                      }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
+                    />
+                  ) : (
+                    medicine.gst
+                  )}
+                </td>
+
+
+
                 <td>
                 {/* allows users to edit the discount field of a medicine when editMedicine matches the medicine.id */}
                 {/* If editMedicine equals medicine.id, the input field is shown.
@@ -880,6 +920,24 @@ const focusInput = (rowIndex, columnIndex) => {
                     />
                   ) : (
                     medicine.sellingPrice
+                  )}
+                </td>
+
+                {/* selling price lose iece */}
+                
+                <td>
+                {editMedicine === medicine.id ? (
+                    <input
+                    ref={(el) => (inputRefs.current[`${index}-9`] = el)}
+                      type="number"
+                      value={tempData.sellingPriceLoosePiece || 0}
+                      onChange={(e) =>
+                        setTempData({ ...tempData, sellingPriceLoosePiece: e.target.value })
+                      }
+                      autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
+                    />
+                  ) : (
+                    medicine.sellingPriceLoosePiece
                   )}
                 </td>
 
@@ -932,19 +990,7 @@ const focusInput = (rowIndex, columnIndex) => {
 
 
 
-                {/* <td>
-                  {editMedicine === medicine.id ? (
-                    <input
-                      type="text"
-                      value={tempData.distributor || ""}
-                      onChange={(e) =>
-                        setTempData({ ...tempData, distributor: e.target.value })
-                      }
-                    />
-                  ) : (
-                    medicine.distributor
-                  )}
-                </td> */}
+            
                 <td>
                   {editMedicine === medicine.id ? (
                     <input
