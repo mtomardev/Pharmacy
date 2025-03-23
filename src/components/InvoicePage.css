@@ -1,5 +1,5 @@
 .invoice-page-container {
-  width: 80%;
+  width: 90%;
   margin: auto;
   font-family: Arial, sans-serif;
 }
@@ -8,6 +8,27 @@ h1, h2 {
   color: #333;
   text-align: center;
 }
+
+.customer-info {
+  
+  display: flex;
+  justify-content: center; /* Centers flex children */
+  
+}
+
+
+.search-bar {
+  display: flex;
+  justify-content: center; /* Centers input field */
+  width: 100%;
+}
+
+.invoice-container {
+  display: flex;
+  justify-content: center; /* Centers input field */
+  width: 100%;
+}
+
 
 .search-bar input {
   width: 100%;
@@ -96,6 +117,7 @@ h1, h2 {
   font-size: 1.2rem;
   margin-top: 10px;
   color: #333;
+  margin-right: 25px;
 }
 
 .medicine-item.highlighted {
@@ -158,9 +180,44 @@ button.disabled-button {
   cursor: not-allowed !important;
   opacity: 0.6 !important;
 }
+#invoice-print {
+  width: 100%;
+  border-collapse: collapse;
+  border: 2px solid black !important;
+  padding: 8px;
+  margin-top: 10px;
+  margin-bottom: 10px;
+}
+
+.invoice-table th, 
+.invoice-table td {
+  border: 2px solid black !important; /* Ensure border is strong */
+  
+}
+
+
 
 
 @media print {
+   /* Ensure input fields are visible */
+
+
+
+   input {
+    display: inline-block !important;
+    border: 1px solid black !important;
+    padding: 5px !important;
+    font-size: 14px !important;
+    color: black !important;
+    background: transparent !important;
+  }
+
+    /* Hide only unnecessary elements */
+    .printbutton, 
+    button:not(input) {  /* This prevents input fields from being hidden */
+       display: none !important;
+    }
+
   body * {
     visibility: hidden;
   }
@@ -172,5 +229,50 @@ button.disabled-button {
     left: 0;
     top: 0;
     width: 100%;
+    background-color: white !important; /* Ensure background is white */
   }
+
+  
+ 
+   /* Ensure the table has proper borders */
+   /* Ensure the print area is properly set */
+   #invoice-print {
+    width: 100%;
+    background: white !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    visibility: visible;
+  }
+  
+  /* .invoice-table {
+    width: 100%;
+    border-collapse: collapse;
+    border: 2px solid black !important; /* Ensures outer border */
+  /* } */ 
+  
+  /* .invoice-table th,
+  .invoice-table td {
+     border: 2px solid black !important; /* Ensure border is strong */
+     /* padding: 8px;
+     width: 5%; */
+  /* } */ 
+ 
+  
+
+
+   /* Ensure proper alignment */
+   .invoice-layout {
+    
+     display: flex;
+     justify-content: space-between;
+   }
+ 
+   /* Make sure the page fits properly */
+   body {
+     margin: 0;
+     padding: 10px;
+   }
 }
+
+

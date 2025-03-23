@@ -281,6 +281,13 @@ const focusInput = (rowIndex, columnIndex) => {
             + (parseInt(tempData.lossQuantity) || 0); // ✅ Include loose pieces
 
       console.log("save", totalPieces)
+
+      const stripsize = parseInt(tempData.stripsize) || 0;  // Default to 0
+const mrp = parseFloat(tempData.mrp) || 0;  // Use parseFloat to retain decimals
+
+const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";  
+
+
       
       const discount = calculateDiscount(updatedData.mrp, updatedData.sellingPrice);
       const medicineRef = doc(db, "medicines", id);
@@ -289,6 +296,7 @@ const focusInput = (rowIndex, columnIndex) => {
         ...updatedData, // Use the latest tempData
         discount: parseFloat(discount),
         totalPieces: totalPieces, // ✅ Save updated total pieces
+        priceloosepiece: priceloosepiece,
         sellingPriceLoosePiece: parseFloat(updatedData.sellingPriceLoosePiece) || 0,  // ✅ Convert
         gst: parseFloat(updatedData.gst) || 0,  // ✅ Convert
         costPriceLossepiece: parseFloat(updatedData.costPriceLossepiece) || 0,  // ✅ Convert
@@ -321,6 +329,12 @@ const focusInput = (rowIndex, columnIndex) => {
 
       console.log("addmedicine", totalPieces)
 
+      const stripsize = parseInt(tempData.stripsize) || 0;  // Default to 0
+const mrp = parseFloat(tempData.mrp) || 0;  // Use parseFloat to retain decimals
+
+const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";  
+
+
       const discount = calculateDiscount(tempData.mrp, tempData.sellingPrice);
 
       await addDoc(collection(db, "medicines"), {
@@ -340,7 +354,8 @@ const focusInput = (rowIndex, columnIndex) => {
         quantity: parseInt(tempData.quantity) || 0,  // Save quantity
         stripsize: tempData.stripsize || 0,
         totalPieces: totalPieces || 0,
-        priceloosepiece: parseFloat(tempData.priceloosepiece) || 0,
+        // priceloosepiece: parseFloat(tempData.priceloosepiece) || 0,
+        priceloosepiece: priceloosepiece || 0,
         sellingPriceLoosePiece: parseFloat(tempData.sellingPriceLoosePiece) || 0,  // ✅ Convert to number
         lossQuantity: parseInt(tempData.lossQuantity) || 0, 
         gst: parseFloat(tempData.gst) || 0,  // ✅ Convert to number
@@ -760,7 +775,7 @@ const focusInput = (rowIndex, columnIndex) => {
             </td>
           
 
-            <td>
+            {/* <td>
                   {editMedicine === medicine.id ? (
                     <input
                     ref={(el) => (inputRefs.current[`${index}-5`] = el)}
@@ -775,7 +790,10 @@ const focusInput = (rowIndex, columnIndex) => {
             ) : (
               medicine.priceloosepiece
             )}
-            </td>
+            </td> */}
+
+<td>{Number(medicine.priceloosepiece || 0).toFixed(2)}</td>
+
 
 
                 <td>

@@ -538,6 +538,18 @@ const updateStockAfterInvoice = async (invoiceId) => {
     }
     navigate(`/customer/${customerId}`); // Navigate to history page
   };
+
+  useEffect(() => {
+    const handlePrint = () => {
+      document.querySelectorAll("input").forEach((input) => {
+        input.style.display = "inline-block";
+      });
+    };
+  
+    window.addEventListener("beforeprint", handlePrint);
+    return () => window.removeEventListener("beforeprint", handlePrint);
+  }, []);
+  
   
   return (
     <div className="invoice-page-container container">
@@ -545,7 +557,7 @@ const updateStockAfterInvoice = async (invoiceId) => {
 
       {/* Mobile Number Search */}
       <div className="customer-info">
-        <input
+        <input className="customer-info"
           type="text"
           placeholder="Enter Customer Phone"
           value={customerPhone}
@@ -621,7 +633,7 @@ const updateStockAfterInvoice = async (invoiceId) => {
       {customerHistory.length > 0 && (
   <div>
     <h2>Purchase History</h2>
-    <table>
+    {/* <table>
       <thead>
         <tr>
           <th>Invoice ID</th>
@@ -642,7 +654,7 @@ const updateStockAfterInvoice = async (invoiceId) => {
   ))}
 </tbody>
 
-    </table>
+    </table> */}
     {selectedInvoice && (
   <div className="invoice-details">
     <h2>Invoice Details</h2>
@@ -680,7 +692,8 @@ const updateStockAfterInvoice = async (invoiceId) => {
 
 
       {/* Invoice Layout */}
-      <div id="invoice-print">
+      <div class="invoice-container">
+      <div id="invoice-print" >
       <div className="invoice-layout">
         {/* Left Side: Shop Details */}
         <div className="left-side">
@@ -723,28 +736,34 @@ const updateStockAfterInvoice = async (invoiceId) => {
                   <td>{index + 1}</td>
 
                    {/* Strip Quantity Input */}
-                  <td>
-                     <input
-                        type="number"
-                        value={medicine.quantity}
-                        onChange={(e) =>
-                          updateQuantity(medicine.id, parseInt(e.target.value, 10) || 0, medicine.lossQuantity) // Call updateQuantity with the new quantity
-                  }
-                />
-                  </td>
+                   <td>
+  {window.matchMedia("print").matches ? (
+    <span>{medicine.quantity}</span>
+  ) : (
+    <input
+      type="number"
+      value={medicine.quantity}
+      onChange={(e) =>
+        updateQuantity(medicine.id, parseInt(e.target.value, 10) || 0, medicine.lossQuantity)
+      }
+    />
+  )}
+</td>
                  
                    {/* Loose Quantity Input */}
-                  <td>
-                    
-                     <input
-                        type="number"
-                        value={medicine.lossQuantity}
-                        
-                        onChange={(e) =>
-                          updateQuantity(medicine.id,medicine.quantity, parseInt(e.target.value, 10) || 0) // Call updateQuantity with the new quantity
-                  }
-                />
-                  </td>
+                   <td>
+  {window.matchMedia("print").matches ? (
+    <span>{medicine.lossQuantity}</span>
+  ) : (
+    <input
+      type="number"
+      value={medicine.lossQuantity}
+      onChange={(e) =>
+        updateQuantity(medicine.id, medicine.quantity, parseInt(e.target.value, 10) || 0)
+      }
+    />
+  )}
+</td>
 
                   <td>{medicine.name}</td>
                   <td>₹{medicine.mrp}</td>
@@ -771,9 +790,9 @@ const updateStockAfterInvoice = async (invoiceId) => {
 
          
           <div className="total-price">
-            <h5>Total Amount: ₹{mrpTotal}</h5>
+            <h5>Total Amount: ₹{mrpTotal.toFixed(2)}</h5>
             <h5>Total Saving: ₹{totalSaving.toFixed(2)}</h5>  
-            <h5>Grand Total: ₹{totalPrice}</h5>
+            <h5>Grand Total: ₹{totalPrice.toFixed(2)}</h5>
           </div>
           
           {/* Total Price */}
@@ -784,7 +803,9 @@ const updateStockAfterInvoice = async (invoiceId) => {
       )}
 
       </div>
-      <button onClick={handleSaveInvoice}>Save Invoice</button>
+      
+    </div>
+    <button onClick={handleSaveInvoice}>Save Invoice</button>
       <button className="printbutton" onClick={() => window.print()}>Print Invoice</button>
 
     </div>
