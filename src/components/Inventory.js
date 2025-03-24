@@ -282,10 +282,11 @@ const focusInput = (rowIndex, columnIndex) => {
 
       console.log("save", totalPieces)
 
-      const stripsize = parseInt(tempData.stripsize) || 0;  // Default to 0
-const mrp = parseFloat(tempData.mrp) || 0;  // Use parseFloat to retain decimals
+      const stripsize = parseInt(tempData.stripsize) || 0;  
+const mrp = parseFloat(tempData.mrp) || 0;  
 
-const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";  
+const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2)) : 0;  
+
 
 
       
@@ -296,7 +297,7 @@ const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";
         ...updatedData, // Use the latest tempData
         discount: parseFloat(discount),
         totalPieces: totalPieces, // ✅ Save updated total pieces
-        priceloosepiece: priceloosepiece,
+        priceloosepiece: parseFloat(priceloosepiece) || 0,
         sellingPriceLoosePiece: parseFloat(updatedData.sellingPriceLoosePiece) || 0,  // ✅ Convert
         gst: parseFloat(updatedData.gst) || 0,  // ✅ Convert
         costPriceLossepiece: parseFloat(updatedData.costPriceLossepiece) || 0,  // ✅ Convert
@@ -329,10 +330,11 @@ const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";
 
       console.log("addmedicine", totalPieces)
 
-      const stripsize = parseInt(tempData.stripsize) || 0;  // Default to 0
-const mrp = parseFloat(tempData.mrp) || 0;  // Use parseFloat to retain decimals
+      const stripsize = parseInt(tempData.stripsize) || 0;  
+const mrp = parseFloat(tempData.mrp) || 0;  
 
-const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";  
+const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2)) : 0;  
+
 
 
       const discount = calculateDiscount(tempData.mrp, tempData.sellingPrice);
@@ -354,8 +356,7 @@ const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";
         quantity: parseInt(tempData.quantity) || 0,  // Save quantity
         stripsize: tempData.stripsize || 0,
         totalPieces: totalPieces || 0,
-        // priceloosepiece: parseFloat(tempData.priceloosepiece) || 0,
-        priceloosepiece: priceloosepiece || 0,
+        priceloosepiece: parseFloat(priceloosepiece) || 0,
         sellingPriceLoosePiece: parseFloat(tempData.sellingPriceLoosePiece) || 0,  // ✅ Convert to number
         lossQuantity: parseInt(tempData.lossQuantity) || 0, 
         gst: parseFloat(tempData.gst) || 0,  // ✅ Convert to number
@@ -637,10 +638,10 @@ const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";
               <th>Strip Size</th>
               <th>Total Qty (Pieces)</th>
               <th>Loose Qty</th>
-              <th>Loose Pieces MRP</th>
               <th>Exp</th>
               <th>Scheme</th>
               <th>MRP</th>
+              <th>Loose Pieces MRP</th>
               <th>Cost Price</th>
               <th>Cost Price Losse piece</th>
               <th>GST (%)</th>
@@ -775,24 +776,9 @@ const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";
             </td>
           
 
-            {/* <td>
-                  {editMedicine === medicine.id ? (
-                    <input
-                    ref={(el) => (inputRefs.current[`${index}-5`] = el)}
-                    type="number"
-                    value={tempData.priceloosepiece || ""}
-                    onChange={(e) =>{
-                      const priceloosepiece = parseFloat(e.target.value) || 0;
-                    setTempData({ ...tempData, priceloosepiece })
-                  }}
-              autoFocus={selectedColumnIndex === 4} // Moves focus when using Arrow keys
-            />
-            ) : (
-              medicine.priceloosepiece
-            )}
-            </td> */}
+           
 
-<td>{Number(medicine.priceloosepiece || 0).toFixed(2)}</td>
+          
 
 
 
@@ -841,6 +827,9 @@ const priceloosepiece = stripsize > 0 ? (mrp / stripsize).toFixed(2) : "0.00";
                     medicine.mrp
                   )}
                 </td>
+
+                <td>{Number(medicine.priceloosepiece || 0).toFixed(2)}</td>
+                
                 <td>
                   {editMedicine === medicine.id ? (
                     <input

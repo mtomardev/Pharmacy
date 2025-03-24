@@ -6,6 +6,7 @@ const saveInvoiceToFirestore = async (
   customerName,
   customerPhone,
   selectedMedicines,
+  priceloosepiece,
   mrpTotal, // ✅ MRP Total Amount
   totalSaving, // ✅ Saving Total Savings
   totalPrice, // ✅ Grand Total (already included)
@@ -40,6 +41,7 @@ const saveInvoiceToFirestore = async (
     costPriceLossepiece: medicine.costPriceLossepiece,
     priceloosepiece: medicine.priceloosepiece,
     gst: medicine.gst,
+    priceloosepiece: priceloosepiece
     
     
   }));
@@ -56,6 +58,7 @@ const saveInvoiceToFirestore = async (
     mrpTotal,
     totalSaving: parseFloat(totalSaving.toFixed(2)), // ✅ Round to 2 decimals,
     totalPrice,
+    priceloosepiece: parseFloat(priceloosepiece.toFixed(2)), // ✅ Round to 2 decimals,
     timestamp: new Date(),
   };
 
