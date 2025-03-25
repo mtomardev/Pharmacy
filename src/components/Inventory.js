@@ -646,7 +646,7 @@ const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2))
               <th>Cost Price Losse piece</th>
               <th>GST (%)</th>
               <th>Discount (%)</th>
-              <th>Selling Price Strip</th>
+              <th>Selling Price</th>
               <th>Selling Price Loose Piece</th>
               <th>Distributor</th>
               <th>H1 Drug</th>
@@ -829,7 +829,7 @@ const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2))
                 </td>
 
                 <td>{Number(medicine.priceloosepiece || 0).toFixed(2)}</td>
-                
+
                 <td>
                   {editMedicine === medicine.id ? (
                     <input

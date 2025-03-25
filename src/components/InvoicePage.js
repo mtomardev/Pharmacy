@@ -128,6 +128,7 @@ const InvoicePage = () => {
           lossQuantity: 0,
           sellingPrice: medicine.sellingPrice,
           mrp: medicine.mrp || 0, // Ensure MRP is included
+          priceloosepiece: medicine.priceloosepiece || 0,
           costPrice: medicine.costPrice ?? 0, // ✅ Ensure costPrice is always set
           costPriceLossepiece: medicine.costPriceLossepiece ?? 0,
           totalSellingPrice: 0, // Initialize selling price
@@ -342,6 +343,7 @@ const handleSaveInvoice = async () => {
     sellingPrice: medicine.sellingPrice ?? 0,  // ✅ Save selling price per strip
     totalSellingPrice: medicine.totalSellingPrice ?? 0,  // ✅ Save total price of this medicine
     mrp: medicine.mrp ?? 0,  // ✅ Save MRP
+    priceloosepiece: medicine.priceloosepiece || 0,
 }));
 
   console.log("Final selected medicines before saving:", medicinesWithDetails);
@@ -373,6 +375,7 @@ const handleSaveInvoice = async () => {
           mrpTotal, // ✅ MRP Total Amount
           totalSaving, // ✅ Saving Total Savings
           totalPrice, // ✅ Grand Total (already included)
+          // priceloosepiece,
 
           
           { createdAt: new Date().toISOString() } // ✅ Add timestamp
@@ -387,9 +390,6 @@ const handleSaveInvoice = async () => {
           await updateStockAfterInvoice(invoiceData.invoiceId);
       }
 
-      // Reset invoice form
-      // setSelectedMedicines([]);
-      // setTotalPrice(0);
       setLastInvoice(invoiceData); // Keep the last saved invoice
 setSelectedInvoice(invoiceData); // Store the current invoice
 

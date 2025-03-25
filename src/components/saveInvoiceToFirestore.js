@@ -37,11 +37,11 @@ const saveInvoiceToFirestore = async (
     lossQuantity: medicine.lossQuantity ?? 0, // ✅ Loose pieces quantity
     sellingPrice: medicine.sellingPrice,
     mrp: medicine.mrp,
+    priceloosepiece: medicine.priceloosepiece,
     costPrice: medicine.costPrice, // ✅ Add this line
     costPriceLossepiece: medicine.costPriceLossepiece,
-    priceloosepiece: medicine.priceloosepiece,
     gst: medicine.gst,
-    priceloosepiece: priceloosepiece
+    
     
     
   }));
