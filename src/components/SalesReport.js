@@ -1,247 +1,358 @@
 import React, { useState, useEffect } from "react";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../firebase"; // Import Firebase config
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { Card, CardContent } from "./ui/card";
+import { Button } from "./ui/button";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import { Timestamp } from "firebase/firestore";
 
-const SalesReport = () => {
-  const [salesData, setSalesData] = useState([]);
-  const [reportType, setReportType] = useState("daily"); // Default report type
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [totalSales, setTotalSales] = useState(0);
-  const [totalProfit, setTotalProfit] = useState(0);
+const ReportPage = () => {
+  const [filter, setFilter] = useState("daily");
+  const [sales, setSales] = useState(0);
+  const [profit, setProfit] = useState(0);
+  const [invoices, setInvoices] = useState([]);
+  const [selectedInvoice, setSelectedInvoice] = useState(null);
+  const [customStartDate, setCustomStartDate] = useState("");
+const [customEndDate, setCustomEndDate] = useState("");
+
 
   useEffect(() => {
-    fetchSalesReport();
-  }, [reportType, startDate, endDate]);
+    fetchData();
+  }, [filter]);
 
-  const fetchSalesReport = async () => {
-    try {
-      let salesQuery = collection(db, "sales");
-      const today = new Date();
-      let start, end;
-      
-      // Report date ranges setup (existing code)
-      if (reportType === "daily") {
-        start = new Date(today.setHours(0, 0, 0, 0));
-        end = new Date(today.setHours(23, 59, 59, 999));
-      } else if (reportType === "weekly") {
-        start = new Date();
-        start.setDate(today.getDate() - 7);
-      } else if (reportType === "monthly") {
-        start = new Date(today.getFullYear(), today.getMonth(), 1);
-        end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-      } else if (reportType === "yearly") {
-        start = new Date(today.getFullYear(), 0, 1);
-        end = new Date(today.getFullYear(), 11, 31);
-      } else if (reportType === "custom" && startDate && endDate) {
-        start = new Date(startDate);
-        end = new Date(endDate);
-      }
-      
-      if (start && end) {
-        salesQuery = query(salesQuery, where("timestamp", ">=", start), where("timestamp", "<=", end));
-      }
-      
-      const querySnapshot = await getDocs(salesQuery);
-      const sales = querySnapshot.docs.map(doc => {
-        const data = doc.data();
-        console.log('Full medicine data:', data.medicines); // Log full medicines array to check fields
-        return {
-          ...data,
-          medicines: data.medicines?.map(med => {
-            // Log individual medicine data to check costPrice
-            console.log(`Medicine: ${med.name}, Selling Price: ${med.sellingPrice}, Cost Price: ${med.costPrice}`);
-            return {
-              id: med.id,
-              name: med.name,
-              quantity: med.quantity,
-              sellingPrice: med.sellingPrice,
-              costPrice: med.costPrice ? med.costPrice : 0, // Ensure costPrice is always included
-            };
-          }) || [],
-        };
-      });
-      
-      console.log("Fetched Sales Data:", sales);
-      setSalesData(sales);
-      calculateTotals(sales);
-    } catch (error) {
-      console.error("Error fetching sales report:", error);
+  // const fetchData = async () => {
+  //   const q = query(collection(db, "sales"));
+  //   const querySnapshot = await getDocs(q);
+  //   let totalSales = 0;
+  //   let totalProfit = 0;
+  //   let invoicesData = [];
+  
+  //   querySnapshot.forEach((doc) => {
+  //     const data = doc.data();
+  //     const invoiceProfit = data.medicines.reduce(
+  //       (acc, med) => acc + calculateProfit(med),
+  //       0
+  //     );
+  
+  //     totalSales += data.netPayableAmount;
+  //     totalProfit += invoiceProfit;
+  
+  //     invoicesData.push({
+  //       id: data.invoiceId,
+  //       netPayableAmount: data.netPayableAmount,
+  //       totalProfit: invoiceProfit,  // Store per-invoice profit
+  //       medicines: data.medicines,
+  //     });
+  //   });
+  
+  //   setSales(totalSales);
+  //   setProfit(totalProfit);
+  //   setInvoices(invoicesData);
+  // };
+  
+  
+  
+
+const fetchData = async () => {
+  const salesRef = collection(db, "sales");
+
+  const now = new Date();
+  let startDate;
+  let q; // ✅ Declare q early
+
+  if (filter === "custom") {
+    if (!customStartDate || !customEndDate) return;
+    const start = new Date(customStartDate);
+    const end = new Date(customEndDate);
+    end.setHours(23, 59, 59, 999); // include the full end day
+    q = query(
+      salesRef,
+      where("timestamp", ">=", Timestamp.fromDate(start)),
+      where("timestamp", "<=", Timestamp.fromDate(end))
+    );
+  } else {
+    switch (filter) {
+      case "daily":
+        startDate = new Date(now);
+        startDate.setHours(0, 0, 0, 0);
+        break;
+      case "weekly":
+        startDate = new Date(now);
+        startDate.setDate(now.getDate() - 7);
+        break;
+      case "monthly":
+        startDate = new Date(now);
+        startDate.setMonth(now.getMonth() - 1);
+        break;
+      case "yearly":
+        startDate = new Date(now);
+        startDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        startDate = null;
     }
-  };
   
+    if (startDate) {
+      const firestoreStartDate = Timestamp.fromDate(startDate);
+      q = query(salesRef, where("timestamp", ">=", firestoreStartDate));
+    } else {
+      q = query(salesRef);
+    }
+  }
   
 
-  const calculateTotals = (sales) => {
-    let totalSalesAmount = 0;
-    let totalProfitAmount = 0;
+ 
+  if (startDate) {
+    const firestoreStartDate = Timestamp.fromDate(startDate); // Convert Date to Firestore Timestamp
+    q = query(salesRef, where("timestamp", ">=", firestoreStartDate));
+  } else {
+    q = query(salesRef);
+  }
+
+  const querySnapshot = await getDocs(q);
+  let totalSales = 0;
+  let invoicesData = [];
+
+  // querySnapshot.forEach((doc) => {
+  //   const data = doc.data();
+  //   console.log("Raw Firestore Timestamp:", data.timestamp);
+
+  //   // Convert Firestore timestamp to JavaScript Date
+  //   const saleDate = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
+
+  //   console.log("Sale Date:", saleDate); // Debugging
+
+  //   const invoiceProfit = data.medicines.reduce((acc, med) => {
+  //     const fullProfit = (med.sellingPrice - med.costPrice) * (med.quantity || 0);
+  //     const looseProfit = (med.sellingPriceLoosePiece - med.costPriceLoosePiece) * (med.lossQuantity || 0);
+  //     return acc + (fullProfit + looseProfit);
+  //   }, 0);
+
+  //   totalSales += data.netPayableAmount;
     
-    sales.forEach(sale => {
-      totalSalesAmount += sale.totalPrice;
-      sale.medicines.forEach(med => {
-        console.log(`Medicine: ${med.name}, Selling Price: ${med.sellingPrice}, Cost Price: ${med.costPrice}, Quantity: ${med.quantity}`);
-        const costPrice = med.costPrice ?? 0; // Ensure costPrice is always defined
-        totalProfitAmount += (med.sellingPrice - costPrice) * med.quantity;
-      });
+
+  //   invoicesData.push({
+  //     id: data.invoiceId,
+  //     netPayableAmount: data.netPayableAmount,
+  //     totalProfit: invoiceProfit,
+  //     medicines: data.medicines,
+  //   });
+  // });
+  querySnapshot.forEach((doc) => {
+    const data = doc.data();
+    console.log("Raw Firestore Timestamp:", data.timestamp);
+
+    // 🔹 Ensure timestamp is valid before converting
+    const saleDate = data.timestamp?.toDate ? data.timestamp.toDate() : new Date(data.timestamp || Date.now());
+    console.log("Sale Date:", saleDate); // Debugging
+
+    const invoiceProfit = data.medicines.reduce((acc, med) => {
+        // 🔹 Ensure values are numbers and not undefined
+        const sellingPrice = Number(med.sellingPrice) || 0;
+        const costPrice = Number(med.costPrice) || 0;
+        const quantity = Number(med.quantity) || 0;
+
+        const sellingPriceLoose = Number(med.sellingPriceLoosePiece) || 0;
+        const costPriceLoose = Number(med.costPriceLossepiece) || 0;
+        const lossQuantity = Number(med.lossQuantity) || 0;
+
+        const fullProfit = (sellingPrice - costPrice) * quantity;
+        const looseProfit = (sellingPriceLoose - costPriceLoose) * lossQuantity;
+
+        return acc + (fullProfit + looseProfit);
+    }, 0);
+
+    // 🔹 Ensure netPayableAmount is a number
+    totalSales += Number(data.netPayableAmount) || 0;
+
+    invoicesData.push({
+        id: data.invoiceId,
+        netPayableAmount: Number(data.netPayableAmount) || 0, // Prevent NaN
+        totalProfit: isNaN(invoiceProfit) ? 0 : invoiceProfit, // Prevent NaN
+        medicines: data.medicines,
     });
+});
+
+// Debugging logs
+console.log("Invoices Data Before Setting State:", invoicesData);
+
+
+  const totalProfit = invoicesData.reduce((sum, i) => sum + i.totalProfit, 0);
+
+  setSales(totalSales);
+  setProfit(totalProfit);
+  setInvoices(invoicesData);
+};
+
+  
+
+  const calculateAmount = (medicine) => {
+    const { quantity, lossQuantity, sellingPrice, sellingPriceLoosePiece } = medicine;
+
+    // Case 1: Full Strip Purchase
+    const fullStripAmount = quantity * sellingPrice;
+
+    // Case 2: Loose Piece Purchase
+    const loosePieceAmount = lossQuantity * sellingPriceLoosePiece;
+
+    // Case 3: Both (Adding Both Amounts)
+    const totalAmount = fullStripAmount + loosePieceAmount;
+
+    console.log("Amount Calculation for:", medicine);
+    console.log("Full Strip Amount:", fullStripAmount);
+    console.log("Loose Piece Amount:", loosePieceAmount);
+    console.log("Total Amount:", totalAmount);
+
+    return totalAmount;
+};
+
+
+  const calculateProfit = (medicine) => {
+    const { quantity, lossQuantity, costPrice, costPriceLossepiece, sellingPrice, sellingPriceLoosePiece} = medicine;
+
+    // ✅ Fix variable names & ensure all fields exist
     
-    setTotalSales(parseFloat(totalSalesAmount.toFixed(2)));
-    setTotalProfit(parseFloat(totalProfitAmount).toFixed(2) );
-  };
+    // Case 1: Full Strip Purchase
+    const fullStripProfit = (quantity || 0) * ((sellingPrice || 0) - (costPrice || 0));
+
+    // Case 2: Loose Piece Purchase
+    const loosePieceProfit = (lossQuantity || 0) * ((sellingPriceLoosePiece || 0) - (costPriceLossepiece || 0));
+
+    // Case 3: Both (Adding Both Profits)
+    const totalProfit = fullStripProfit + loosePieceProfit;
+
+
+    console.log(`Calculating Profit for ${medicine.name}: ₹${totalProfit}`);
+
+    return totalProfit;
+};
+
+
 
   return (
-    <div>
-      <h1>Sales Report</h1>
-      <select value={reportType} onChange={(e) => setReportType(e.target.value)}>
-        <option value="daily">Daily</option>
-        <option value="weekly">Weekly</option>
-        <option value="monthly">Monthly</option>
-        <option value="yearly">Yearly</option>
-        <option value="custom">Custom</option>
-      </select>
-      {reportType === "custom" && (
-        <>
-          <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} />
-          <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} />
-        </>
-      )}
-      <button onClick={fetchSalesReport}>Generate Report</button>
-      <h2>Total Sales: ₹{totalSales}</h2>
-      <h2>Total Profit: ₹{totalProfit}</h2>
-      <table>
-        <thead>
-          <tr>
-            <th>Invoice ID</th>
-            <th>Total Price</th>
-            <th>Timestamp</th>
-          </tr>
-        </thead>
-        <tbody>
-          {salesData.map((sale, index) => (
-            <tr key={index}>
-              <td>{sale.invoiceId}</td>
-              <td>₹{sale.totalPrice}</td>
-              <td>{new Date(sale.timestamp?.seconds * 1000).toLocaleDateString()}</td>
-            </tr>
+    <div className="p-4 grid grid-cols-2 gap-4">
+      <div>
+        {/* Filter Options */}
+        <div className="flex gap-2 mb-4">
+          {["Daily", "Weekly", "Monthly", "Yearly", "Custom"].map((type) => (
+            <Button key={type} onClick={() => setFilter(type.toLowerCase())}>{type}</Button>
           ))}
-        </tbody>
-      </table>
+          {filter === "custom" && (
+  <div className="flex gap-2 mt-2">
+    <input
+      type="date"
+      value={customStartDate}
+      onChange={(e) => setCustomStartDate(e.target.value)}
+      className="border px-2 py-1 rounded"
+    />
+    <input
+      type="date"
+      value={customEndDate}
+      onChange={(e) => setCustomEndDate(e.target.value)}
+      className="border px-2 py-1 rounded"
+    />
+    <Button onClick={fetchData}>Apply</Button>
+  </div>
+)}
+
+        </div>
+
+        {/* Total Sales & Total Profit */}
+        <Card className="mb-4">
+          <CardContent>
+            <h2>Total Sales: ₹{sales}</h2>
+            <h2>Total Profit: ₹{profit.toFixed(2)}</h2>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Graph Section */}
+      <div>
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={[{ name: filter, sales, profit }]}> 
+            <CartesianGrid strokeDasharray="3 3" />
+            <XAxis dataKey="name" />
+            <YAxis />
+            <Tooltip />
+            <Legend />
+            <Line type="monotone" dataKey="sales" stroke="#8884d8" />
+            <Line type="monotone" dataKey="profit" stroke="#82ca9d" />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+
+      {/* Invoices Table */}
+      <div className="col-span-2 overflow-auto h-60">
+        <table className="w-full border-collapse border border-gray-300">
+          <thead>
+            <tr>
+              <th>Invoice No</th>
+              <th>Net Payable</th>
+              <th>Total Profit</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody>
+  {invoices.slice(0, 10).map((invoice) => (
+    <tr key={invoice.id}>
+      <td>{invoice.id}</td>
+      <td >₹{invoice.netPayableAmount.toFixed(2)}</td>
+      <td>₹{invoice.totalProfit.toFixed(2)}</td>  {/* Updated to show per-invoice profit */}
+      <td><Button onClick={() => setSelectedInvoice(invoice)}>View</Button></td>
+    </tr>
+  ))}
+</tbody>
+
+        </table>
+      </div>
+
+      {/* Invoice Details Modal */}
+      {selectedInvoice && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="bg-white p-4 rounded w-1/2">
+            <h2>Invoice Details ({selectedInvoice.id})</h2>
+            <table className="w-full border-collapse border border-gray-300 mt-2">
+              <thead>
+                <tr>
+                  <th>Medicine Name</th>
+                  <th>Quantity</th>
+                  <th>Loss Qty</th>
+                  <th>Amount</th>
+                  <th>Profit</th>
+                </tr>
+              </thead>
+              <tbody>
+  {selectedInvoice.medicines.map((med) => (
+    <tr key={med.id}>
+      <td>{med.name}</td>
+      <td>{med.quantity}</td>
+      <td>{med.lossQuantity}</td>
+      <td>₹{(calculateAmount(med) || 0).toFixed(2)}</td>
+      <td>₹{(calculateProfit(med) || 0).toFixed(2)}</td>
+    </tr>
+  ))}
+  {/* Show Net Payable Amount in a separate row */}
+  <tr>
+    <td colSpan="2" className="font-bold text-right">Total Net Payable:</td>
+    <td className="font-bold">₹{selectedInvoice.netPayableAmount.toFixed(2)}</td>
+  </tr>
+
+  <tr>
+    <td colSpan="2" className="font-bold text-right">Total Profit:</td>
+    <td className="font-bold">
+      ₹{selectedInvoice.medicines.reduce((total, med) => total + calculateProfit(med), 0).toFixed(2)}
+    </td>
+  </tr>
+</tbody>
+
+
+            </table>
+            <Button className="mt-4" onClick={() => setSelectedInvoice(null)}>Close</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
 
-export default SalesReport;
-
-// import React, { useState, useEffect } from "react";
-// import { collection, getDocs, query, where } from "firebase/firestore";
-// import { db } from "../firebase";
-// import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
-
-// const SalesReport = () => {
-//   const [salesData, setSalesData] = useState([]);
-//   const [reportType, setReportType] = useState("daily");
-//   const [startDate, setStartDate] = useState("");
-//   const [endDate, setEndDate] = useState("");
-//   const [totalSales, setTotalSales] = useState(0);
-//   const [totalProfit, setTotalProfit] = useState(0);
-//   const [loading, setLoading] = useState(false);
-
-//   useEffect(() => {
-//     fetchSalesReport();
-//   }, [reportType, startDate, endDate]);
-
-//   const fetchSalesReport = async () => {
-//     setLoading(true);
-//     try {
-//       let salesQuery = collection(db, "sales");
-//       const today = new Date();
-//       let start, end;
-      
-//       if (reportType === "daily") {
-//         start = new Date(today.setHours(0, 0, 0, 0));
-//         end = new Date(today.setHours(23, 59, 59, 999));
-//       } else if (reportType === "weekly") {
-//         start = new Date();
-//         start.setDate(today.getDate() - 7);
-//       } else if (reportType === "monthly") {
-//         start = new Date(today.getFullYear(), today.getMonth(), 1);
-//         end = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-//       } else if (reportType === "yearly") {
-//         start = new Date(today.getFullYear(), 0, 1);
-//         end = new Date(today.getFullYear(), 11, 31);
-//       } else if (reportType === "custom" && startDate && endDate) {
-//         start = new Date(startDate);
-//         end = new Date(endDate);
-//       }
-      
-//       if (start && end) {
-//         salesQuery = query(salesQuery, where("timestamp", ">=", start), where("timestamp", "<=", end));
-//       }
-      
-//       const querySnapshot = await getDocs(salesQuery);
-//       const sales = querySnapshot.docs.map(doc => doc.data());
-      
-//       setSalesData(sales);
-//       calculateTotals(sales);
-//     } catch (error) {
-//       console.error("Error fetching sales report:", error);
-//     }
-//     setLoading(false);
-//   };
-  
-//   const calculateTotals = (sales) => {
-//     let totalSalesAmount = 0;
-//     let totalProfitAmount = 0;
-    
-//     sales.forEach(sale => {
-//       totalSalesAmount += sale.totalPrice;
-//       totalProfitAmount += sale.totalProfit;
-//     });
-    
-//     setTotalSales(parseFloat(totalSalesAmount.toFixed(2)));
-//     setTotalProfit(parseFloat(totalProfitAmount.toFixed(2)));
-//   };
-  
-//   return (
-//     <div className="p-4">
-//       <h1 className="text-xl font-bold">Sales Report</h1>
-//       <div className="flex gap-2 my-4">
-//         <select value={reportType} onChange={(e) => setReportType(e.target.value)} className="border p-2 rounded">
-//           <option value="daily">Daily</option>
-//           <option value="weekly">Weekly</option>
-//           <option value="monthly">Monthly</option>
-//           <option value="yearly">Yearly</option>
-//           <option value="custom">Custom</option>
-//         </select>
-//         {reportType === "custom" && (
-//           <>
-//             <input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="border p-2 rounded" />
-//             <input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="border p-2 rounded" />
-//           </>
-//         )}
-//       </div>
-//       <h2>Total Sales: ₹{totalSales}</h2>
-//       <h2>Total Profit: ₹{totalProfit}</h2>
-//       {loading ? <p>Loading...</p> : (
-//         <div className="my-6">
-//           <ResponsiveContainer width="100%" height={300}>
-//             <LineChart data={salesData}>
-//               <CartesianGrid strokeDasharray="3 3" />
-//               <XAxis 
-//   dataKey="timestamp" 
-//   tickFormatter={(time) => time?.seconds ? new Date(time.seconds * 1000).toLocaleDateString() : "Invalid Date"} 
-// />
-//               <YAxis />
-//               <Tooltip />
-//               <Legend />
-//               <Line type="monotone" dataKey="totalPrice" stroke="#8884d8" name="Sales" />
-//               <Line type="monotone" dataKey="totalProfit" stroke="#82ca9d" name="Profit" />
-//             </LineChart>
-//           </ResponsiveContainer>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
-
-// export default SalesReport;
+export default ReportPage;

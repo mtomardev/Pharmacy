@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@shadcn/ui": "^0.0.4",
     "chart.js": "^4.4.8",
     "cra-template": "1.2.0",
     "firebase": "^11.2.0",

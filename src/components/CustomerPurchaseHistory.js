@@ -45,7 +45,16 @@ const CustomerPurchaseHistory = () => {
     const invoiceList = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
-      timestamp: doc.data().timestamp ? doc.data().timestamp.toDate() : null,
+      // timestamp: doc.data().timestamp ? doc.data().timestamp.toDate() : null,
+      timestamp: (() => {
+        const ts = doc.data().timestamp;
+        if (!ts) return null;
+        if (typeof ts.toDate === "function") return ts.toDate(); // Firestore Timestamp
+        if (ts instanceof Date) return ts; // JS Date
+        if (typeof ts === "string") return new Date(ts); // ISO string
+        return null;
+      })(),
+      
     }));
 
     // Extract distinct years for the dropdown filter

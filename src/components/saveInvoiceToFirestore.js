@@ -1,15 +1,16 @@
 import { writeBatch, doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase"; // Import Firestore instance
+import { Timestamp } from "firebase/firestore";
 
 const saveInvoiceToFirestore = async (
   customerId,
   customerName,
   customerPhone,
   selectedMedicines,
-  priceloosepiece,
   mrpTotal, // ✅ MRP Total Amount
   totalSaving, // ✅ Saving Total Savings
-  totalPrice, // ✅ Grand Total (already included)
+  netPayableAmount, // ✅ Grand Total (already included)
+  priceloosepiece,
   
 
 ) => {
@@ -36,6 +37,7 @@ const saveInvoiceToFirestore = async (
     quantity: medicine.quantity,
     lossQuantity: medicine.lossQuantity ?? 0, // ✅ Loose pieces quantity
     sellingPrice: medicine.sellingPrice,
+    sellingPriceLoosePiece: medicine.sellingPriceLoosePiece,
     mrp: medicine.mrp,
     priceloosepiece: medicine.priceloosepiece,
     costPrice: medicine.costPrice, // ✅ Add this line
@@ -57,9 +59,10 @@ const saveInvoiceToFirestore = async (
     medicines: medicinesWithCost,
     mrpTotal,
     totalSaving: parseFloat(totalSaving.toFixed(2)), // ✅ Round to 2 decimals,
-    totalPrice,
+    netPayableAmount, 
     priceloosepiece: parseFloat(priceloosepiece.toFixed(2)), // ✅ Round to 2 decimals,
-    timestamp: new Date(),
+    // timestamp: new Date().toISOString() // ✅ Add timestamp inside the object
+    timestamp: Timestamp.now()
   };
 
   const invoiceRef = doc(db, "sales", invoiceId);
