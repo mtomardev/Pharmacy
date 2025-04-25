@@ -20,35 +20,7 @@ const [customEndDate, setCustomEndDate] = useState("");
     fetchData();
   }, [filter]);
 
-  // const fetchData = async () => {
-  //   const q = query(collection(db, "sales"));
-  //   const querySnapshot = await getDocs(q);
-  //   let totalSales = 0;
-  //   let totalProfit = 0;
-  //   let invoicesData = [];
   
-  //   querySnapshot.forEach((doc) => {
-  //     const data = doc.data();
-  //     const invoiceProfit = data.medicines.reduce(
-  //       (acc, med) => acc + calculateProfit(med),
-  //       0
-  //     );
-  
-  //     totalSales += data.netPayableAmount;
-  //     totalProfit += invoiceProfit;
-  
-  //     invoicesData.push({
-  //       id: data.invoiceId,
-  //       netPayableAmount: data.netPayableAmount,
-  //       totalProfit: invoiceProfit,  // Store per-invoice profit
-  //       medicines: data.medicines,
-  //     });
-  //   });
-  
-  //   setSales(totalSales);
-  //   setProfit(totalProfit);
-  //   setInvoices(invoicesData);
-  // };
   
   
   
@@ -113,31 +85,7 @@ const fetchData = async () => {
   let totalSales = 0;
   let invoicesData = [];
 
-  // querySnapshot.forEach((doc) => {
-  //   const data = doc.data();
-  //   console.log("Raw Firestore Timestamp:", data.timestamp);
-
-  //   // Convert Firestore timestamp to JavaScript Date
-  //   const saleDate = data.timestamp.toDate ? data.timestamp.toDate() : new Date(data.timestamp);
-
-  //   console.log("Sale Date:", saleDate); // Debugging
-
-  //   const invoiceProfit = data.medicines.reduce((acc, med) => {
-  //     const fullProfit = (med.sellingPrice - med.costPrice) * (med.quantity || 0);
-  //     const looseProfit = (med.sellingPriceLoosePiece - med.costPriceLoosePiece) * (med.lossQuantity || 0);
-  //     return acc + (fullProfit + looseProfit);
-  //   }, 0);
-
-  //   totalSales += data.netPayableAmount;
-    
-
-  //   invoicesData.push({
-  //     id: data.invoiceId,
-  //     netPayableAmount: data.netPayableAmount,
-  //     totalProfit: invoiceProfit,
-  //     medicines: data.medicines,
-  //   });
-  // });
+  
   querySnapshot.forEach((doc) => {
     const data = doc.data();
     console.log("Raw Firestore Timestamp:", data.timestamp);

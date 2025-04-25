@@ -102,7 +102,7 @@
     
 
     const addToInvoice = (medicine) => {  
-      if (medicine.quantity <= 0) {
+      if (medicine.quantity <= 0 && medicine.lossQuantity <= 0) {
         alert("This medicine is out of stock.");
         return;
       }
@@ -622,18 +622,33 @@
                 <span>MRP: ₹{medicine.mrp}</span>
                 <span>Selling Price: ₹{medicine.sellingPrice}</span>
                 {/* Show Quantity with Red if 0 */}
-                <span className={`quantity ${medicine.quantity === 0 ? "out-of-stock" : ""}`}>
+                {/* <span className={`quantity ${medicine.quantity === 0 ? "out-of-stock" : ""}`}>
             Quantity: {medicine.quantity > 0 ? medicine.quantity : "Out of Stock"}
-          </span> {/* Show Quantity */}
+          </span> */}
+          <span className={`quantity ${(medicine.quantity <= 0 && medicine.lossQuantity <= 0) ? "out-of-stock" : ""}`}>
+  Quantity: {(medicine.quantity > 0 || medicine.lossQuantity > 0)
+    ? `${medicine.quantity}, ${medicine.lossQuantity} loose`
+    : "Out of Stock"}
+</span>
+
+           {/* Show Quantity */}
           
           {/* Disable Add Button if Quantity is Zero */}
-          <button 
+          {/* <button 
             onClick={() => addToInvoice(medicine)} 
             disabled={medicine.quantity <= 0}
             className={medicine.quantity <= 0 ? "disabled-button" : ""}
           >
             {medicine.quantity > 0 ? "Add" : "Out of Stock"}
-          </button>
+          </button> */}
+          <button 
+  onClick={() => addToInvoice(medicine)} 
+  disabled={medicine.quantity <= 0 && medicine.lossQuantity <= 0}
+  className={(medicine.quantity <= 0 && medicine.lossQuantity <= 0) ? "disabled-button" : ""}
+>
+  {(medicine.quantity > 0 || medicine.lossQuantity > 0) ? "Add" : "Out of Stock"}
+</button>
+
               </div>
             ))
           ) : (
@@ -656,6 +671,7 @@
           <div className="left-side">
             <p>Tomar Pharmacy</p>
             <p>D-59 Gali No 1, Rajpur Khurd, New Delhi 110068</p>
+           
           </div>
 
           {/* Right Side: Invoice Details */}
