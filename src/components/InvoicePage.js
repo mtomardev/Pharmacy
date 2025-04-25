@@ -401,8 +401,28 @@
         }
 
         setLastInvoice(invoiceData); // Keep the last saved invoice
-  setSelectedInvoice(invoiceData); // Store the current invoice
+        setSelectedInvoice(invoiceData); // Store the current invoice
 
+        const shouldPrint = window.confirm("Invoice saved! Do you want to print it?");
+        if (shouldPrint) {
+          
+          // Listen for after print
+          window.onafterprint = () => {
+            console.log("Print finished, refreshing...");
+            window.location.reload();
+          };
+    
+          window.print();
+    
+          // 🔥 Backup force reload even if afterprint fails
+          setTimeout(() => {
+            console.log("Force refreshing after print timeout...");
+            window.location.reload();
+          }, 1000); // 1 second after print trigger (adjust if needed)
+    
+        } else {
+          window.location.reload();
+        }
 
     } catch (error) {
         console.error("❌ Error saving invoice:", error);
@@ -631,16 +651,7 @@
     : "Out of Stock"}
 </span>
 
-           {/* Show Quantity */}
-          
-          {/* Disable Add Button if Quantity is Zero */}
-          {/* <button 
-            onClick={() => addToInvoice(medicine)} 
-            disabled={medicine.quantity <= 0}
-            className={medicine.quantity <= 0 ? "disabled-button" : ""}
-          >
-            {medicine.quantity > 0 ? "Add" : "Out of Stock"}
-          </button> */}
+         
           <button 
   onClick={() => addToInvoice(medicine)} 
   disabled={medicine.quantity <= 0 && medicine.lossQuantity <= 0}
@@ -774,8 +785,8 @@
         </div>
         
       </div>
-      <button onClick={handleSaveInvoice}>Save Invoice</button>
-        <button className="printbutton" onClick={() => window.print()}>Print Invoice</button>
+      <button onClick={handleSaveInvoice}>Save & Print Invoice</button>
+        {/* <button className="printbutton" onClick={() => window.print()}>Print Invoice</button> */}
 
       </div>
     );
