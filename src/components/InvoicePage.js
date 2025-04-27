@@ -421,7 +421,10 @@
           }, 1000); // 1 second after print trigger (adjust if needed)
     
         } else {
-          window.location.reload();
+          console.log("User canceled print, refreshing immediately...");
+          setTimeout(() => {
+            window.location.reload();
+          }, 500); // Small delay for better UX
         }
 
     } catch (error) {
