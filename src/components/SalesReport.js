@@ -5,6 +5,7 @@ import { Card, CardContent } from "./ui/card";
 import { Button } from "./ui/button";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { Timestamp } from "firebase/firestore";
+import "./SalesReport.css";
 
 const ReportPage = () => {
   const [filter, setFilter] = useState("daily");
@@ -208,7 +209,7 @@ console.log("Invoices Data Before Setting State:", invoicesData);
         {/* Total Sales & Total Profit */}
         <Card className="mb-4">
           <CardContent>
-            <h2>Total Sales: ₹{sales}</h2>
+            <h2>Total Sales: ₹{sales.toFixed(2)}</h2>
             <h2>Total Profit: ₹{profit.toFixed(2)}</h2>
           </CardContent>
         </Card>
@@ -229,30 +230,37 @@ console.log("Invoices Data Before Setting State:", invoicesData);
         </ResponsiveContainer>
       </div>
 
-      {/* Invoices Table */}
-      <div className="col-span-2 overflow-auto h-60">
-        <table className="w-full border-collapse border border-gray-300">
-          <thead>
-            <tr>
-              <th>Invoice No</th>
-              <th>Net Payable</th>
-              <th>Total Profit</th>
-              <th>Action</th>
-            </tr>
-          </thead>
-          <tbody>
-  {invoices.slice(0, 10).map((invoice) => (
-    <tr key={invoice.id}>
-      <td>{invoice.id}</td>
-      <td >₹{invoice.netPayableAmount.toFixed(2)}</td>
-      <td>₹{invoice.totalProfit.toFixed(2)}</td>  {/* Updated to show per-invoice profit */}
-      <td><Button onClick={() => setSelectedInvoice(invoice)}>View</Button></td>
-    </tr>
-  ))}
-</tbody>
+  
 
-        </table>
-      </div>
+{/* Invoices Table */}
+<div className="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th className="p-2 border">S.No.</th>
+        <th className="p-2 border">Invoice No</th>
+        <th className="p-2 border">Net Payable</th>
+        <th className="p-2 border">Total Profit</th>
+        <th className="p-2 border">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      {[...invoices].reverse().map((invoice, index) => (
+        <tr key={invoice.id} className="hover:bg-gray-50">
+          <td className="p-2 border">{index + 1}</td>
+          <td className="p-2 border">{invoice.id}</td>
+          <td className="p-2 border">₹{invoice.netPayableAmount.toFixed(2)}</td>
+          <td className="p-2 border">₹{invoice.totalProfit.toFixed(2)}</td>
+          <td className="p-2 border">
+            <Button onClick={() => setSelectedInvoice(invoice)}>View</Button>
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+
+
 
       {/* Invoice Details Modal */}
       {selectedInvoice && (
