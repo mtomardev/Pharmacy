@@ -119,6 +119,7 @@ const fetchData = async () => {
         netPayableAmount: Number(data.netPayableAmount) || 0, // Prevent NaN
         totalProfit: isNaN(invoiceProfit) ? 0 : invoiceProfit, // Prevent NaN
         medicines: data.medicines,
+        timestamp: data.timestamp?.toDate?.() || null,  // ✅ Add this line
     });
 });
 
@@ -239,6 +240,7 @@ console.log("Invoices Data Before Setting State:", invoicesData);
       <tr>
         <th className="p-2 border">S.No.</th>
         <th className="p-2 border">Invoice No</th>
+        <th className="p-2 border">Date</th>
         <th className="p-2 border">Net Payable</th>
         <th className="p-2 border">Total Profit</th>
         <th className="p-2 border">Action</th>
@@ -249,6 +251,12 @@ console.log("Invoices Data Before Setting State:", invoicesData);
         <tr key={invoice.id} className="hover:bg-gray-50">
           <td className="p-2 border">{index + 1}</td>
           <td className="p-2 border">{invoice.id}</td>
+          <td className="p-2 border">
+  {invoice.timestamp
+    ? new Date(invoice.timestamp).toLocaleDateString("en-GB")
+    : "N/A"}
+</td>
+
           <td className="p-2 border">₹{invoice.netPayableAmount.toFixed(2)}</td>
           <td className="p-2 border">₹{invoice.totalProfit.toFixed(2)}</td>
           <td className="p-2 border">
@@ -263,6 +271,7 @@ console.log("Invoices Data Before Setting State:", invoicesData);
 
 
       {/* Invoice Details Modal */}
+      <h3>Invoice Details</h3>
       {selectedInvoice && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50">
           <div className="bg-white p-4 rounded w-1/2">
