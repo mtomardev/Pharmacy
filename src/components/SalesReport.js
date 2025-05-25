@@ -17,33 +17,60 @@ const ReportPage = () => {
 const [customEndDate, setCustomEndDate] = useState("");
 
 
-  useEffect(() => {
-    fetchData();
-  }, [filter]);
+  // useEffect(() => {
+  //   fetchData();
+  // }, [filter]);
 
-  
+  useEffect(() => {
+  if (filter === "custom" && customStartDate && customEndDate) {
+    fetchData();
+  } else if (filter !== "custom") {
+    fetchData();
+  }
+}, [filter, customStartDate, customEndDate]);
+
+// ✅ Add this AFTER the above useEffect
+useEffect(() => {
+  if (filter === "custom") {
+    setInvoices([]);
+    setSales(0);
+    setProfit(0);
+  }
+}, [customStartDate, customEndDate]);
+
   
   
   
 
 const fetchData = async () => {
   const salesRef = collection(db, "sales");
-
+  let q; // ✅ Declare q early
+  
   const now = new Date();
   let startDate;
-  let q; // ✅ Declare q early
 
-  if (filter === "custom") {
-    if (!customStartDate || !customEndDate) return;
-    const start = new Date(customStartDate);
-    const end = new Date(customEndDate);
-    end.setHours(23, 59, 59, 999); // include the full end day
-    q = query(
-      salesRef,
-      where("timestamp", ">=", Timestamp.fromDate(start)),
-      where("timestamp", "<=", Timestamp.fromDate(end))
-    );
+
+ if (filter === "custom") {
+  if (!customStartDate || !customEndDate) return;
+
+  const start = new Date(customStartDate);
+  const end = new Date(customEndDate);
+  end.setHours(23, 59, 59, 999); // include the whole end day
+
+  if (start > end) {
+    console.error("Invalid date range");
+    return;
+  }
+
+  console.log("Fetching data between", start, "and", end);
+
+  q = query(
+    salesRef,
+    where("timestamp", ">=", Timestamp.fromDate(start)),
+    where("timestamp", "<=", Timestamp.fromDate(end))
+  );
   } else {
+    let startDate;
     switch (filter) {
       case "daily":
         startDate = new Date(now);
@@ -61,26 +88,28 @@ const fetchData = async () => {
         startDate = new Date(now);
         startDate.setFullYear(now.getFullYear() - 1);
         break;
-      default:
-        startDate = null;
     }
   
-    if (startDate) {
-      const firestoreStartDate = Timestamp.fromDate(startDate);
-      q = query(salesRef, where("timestamp", ">=", firestoreStartDate));
-    } else {
-      q = query(salesRef);
-    }
+    
+  if (startDate) {
+    // const firestoreStartDate = Timestamp.fromDate(startDate); // Convert Date to Firestore Timestamp
+    // q = query(salesRef, where("timestamp", ">=", firestoreStartDate));
+    q = query(salesRef, where("timestamp", ">=", Timestamp.fromDate(startDate)));
+  } else {
+    q = query(salesRef);
+  }
+
+
   }
   
 
  
-  if (startDate) {
-    const firestoreStartDate = Timestamp.fromDate(startDate); // Convert Date to Firestore Timestamp
-    q = query(salesRef, where("timestamp", ">=", firestoreStartDate));
-  } else {
-    q = query(salesRef);
-  }
+  // if (startDate) {
+  //   const firestoreStartDate = Timestamp.fromDate(startDate); // Convert Date to Firestore Timestamp
+  //   q = query(salesRef, where("timestamp", ">=", firestoreStartDate));
+  // } else {
+  //   q = query(salesRef);
+  // }
 
   const querySnapshot = await getDocs(q);
   let totalSales = 0;
@@ -189,19 +218,22 @@ console.log("Invoices Data Before Setting State:", invoicesData);
           ))}
           {filter === "custom" && (
   <div className="flex gap-2 mt-2">
+    <label>Start Date</label>
     <input
       type="date"
       value={customStartDate}
       onChange={(e) => setCustomStartDate(e.target.value)}
       className="border px-2 py-1 rounded"
     />
+    <label>End Date</label>
     <input
       type="date"
       value={customEndDate}
       onChange={(e) => setCustomEndDate(e.target.value)}
       className="border px-2 py-1 rounded"
     />
-    <Button onClick={fetchData}>Apply</Button>
+ 
+
   </div>
 )}
 

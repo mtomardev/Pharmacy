@@ -678,7 +678,7 @@
 
 
         {/* Invoice Layout */}
-        <div class="invoice-container">
+        <div className="invoice-container">
         <div id="invoice-print" >
         <div className="invoice-layout">
           {/* Left Side: Shop Details */}

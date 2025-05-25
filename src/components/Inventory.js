@@ -285,6 +285,8 @@ const focusInput = (rowIndex, columnIndex) => {
       const stripsize = parseInt(tempData.stripsize) || 0;  
 const mrp = parseFloat(tempData.mrp) || 0;  
 
+
+//Loose Pieces MRP
 const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2)) : 0;  
 
 
@@ -297,7 +299,7 @@ const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2))
         ...updatedData, // Use the latest tempData
         discount: parseFloat(discount),
         totalPieces: totalPieces, // ✅ Save updated total pieces
-        priceloosepiece: parseFloat(priceloosepiece) || 0,
+        priceloosepiece: parseFloat(priceloosepiece) || 0,  //Loose Pieces MRP
         sellingPriceLoosePiece: parseFloat(updatedData.sellingPriceLoosePiece) || 0,  // ✅ Convert
         gst: parseFloat(updatedData.gst) || 0,  // ✅ Convert
         costPriceLossepiece: parseFloat(updatedData.costPriceLossepiece) || 0,  // ✅ Convert
@@ -333,6 +335,7 @@ const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2))
       const stripsize = parseInt(tempData.stripsize) || 0;  
 const mrp = parseFloat(tempData.mrp) || 0;  
 
+//Loose Pieces MRP
 const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2)) : 0;  
 
 
@@ -356,7 +359,7 @@ const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2))
         quantity: parseInt(tempData.quantity) || 0,  // Save quantity
         stripsize: tempData.stripsize || 0,
         totalPieces: totalPieces || 0,
-        priceloosepiece: parseFloat(priceloosepiece) || 0,
+        priceloosepiece: parseFloat(priceloosepiece) || 0, //Loose Pieces MRP
         sellingPriceLoosePiece: parseFloat(tempData.sellingPriceLoosePiece) || 0,  // ✅ Convert to number
         lossQuantity: parseInt(tempData.lossQuantity) || 0, 
         gst: parseFloat(tempData.gst) || 0,  // ✅ Convert to number
@@ -827,7 +830,7 @@ const priceloosepiece = stripsize > 0 ? parseFloat((mrp / stripsize).toFixed(2))
                     medicine.mrp
                   )}
                 </td>
-
+{/* Loose Pieces MRP */}
                 <td>{Number(medicine.priceloosepiece || 0).toFixed(2)}</td>
 
                 <td>
